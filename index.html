@@ -1,9 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="cs">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>o-io.cz</title>
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
 </head>
 <body>
-  <h1>o-io.cz</h1>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-domain">o-io.cz</div>
+      <div class="logo-sub">personal dashboard</div>
+    </div>
+
+    <div class="sidebar-nav">
+
+      <div class="nav-section">
+        <div class="nav-item" data-page="dashboard">
+          <i class="ti ti-layout-dashboard"></i> Dashboard
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Úkoly</div>
+        <div class="nav-sub">
+          <div class="nav-item" data-page="tasks-board">
+            <i class="ti ti-layout-kanban"></i> Board
+          </div>
+          <div class="nav-item" data-page="tasks-list">
+            <i class="ti ti-list"></i> Seznam
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Poznámky</div>
+        <div class="nav-sub">
+          <div class="nav-item" data-page="notes-list">
+            <i class="ti ti-notes"></i> Seznam
+          </div>
+          <div class="nav-item" data-page="notes-editor">
+            <i class="ti ti-pencil"></i> Editor
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Homelab</div>
+        <div class="nav-sub">
+          <div class="nav-item" data-page="homelab">
+            <i class="ti ti-server"></i> Přehled
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Finance</div>
+        <div class="nav-sub">
+          <div class="nav-item" data-page="finance">
+            <i class="ti ti-chart-pie"></i> Přehled
+          </div>
+          <div class="nav-item" data-page="finance-plan">
+            <i class="ti ti-calendar-stats"></i> Roční plán
+          </div>
+          <div class="nav-item" data-page="finance-savings">
+            <i class="ti ti-piggy-bank"></i> Spoření
+          </div>
+          <div class="nav-item" data-page="finance-shopping">
+            <i class="ti ti-shopping-cart"></i> Nákupy
+          </div>
+          <div class="nav-item" data-page="finance-invest">
+            <i class="ti ti-trending-up"></i> Investice
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar">S</div>
+        <div class="user-name">Stanislav</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content" id="content">
+      <!-- stránky se načítají dynamicky -->
+    </div>
+  </main>
+
+</div>
+
+<script src="assets/js/storage.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/pages/dashboard.js"></script>
+<script src="assets/js/pages/tasks-board.js"></script>
+<script src="assets/js/pages/tasks-list.js"></script>
+<script src="assets/js/pages/notes-list.js"></script>
+<script src="assets/js/pages/homelab.js"></script>
+<script src="assets/js/pages/finance.js"></script>
+
 </body>
 </html>
