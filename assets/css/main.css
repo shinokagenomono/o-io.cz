@@ -397,3 +397,41 @@ html, body {
 .bar.yellow { background: var(--yellow); }
 .bar.accent { background: var(--accent); }
 .bar.red    { background: var(--red); }
+
+/* Icon badge — barevný čtverec s ikonou (servery/služby) */
+.icon-badge {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+
+.icon-badge.blue   { background: #1e3a5f; color: #60a5fa; }
+.icon-badge.purple { background: #3b2f5f; color: #a78bfa; }
+.icon-badge.indigo { background: #2a2f5f; color: #818cf8; }
+.icon-badge.teal   { background: #0d3d3d; color: #2dd4bf; }
+.icon-badge.green  { background: var(--green-bg); color: var(--green); }
+.icon-badge.amber  { background: var(--accent-bg); color: var(--accent); }
+
+/* Mini-stat — label nad hodnotou, pro grid statistik na kartách */
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-stat-label {
+  font-size: 10px;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mini-stat-val {
+  font-size: 14px;
+  color: var(--text-1);
+}

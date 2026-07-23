@@ -15,15 +15,15 @@
 var Homelab = {
 
   proxmoxNodes: [
-    { name: 'Proxmox N150',         host: '192.168.10.2',  port: 8006 },
-    { name: 'Proxmox Winterlegacy', host: '192.168.10.20', port: 8006 },
+    { name: 'Proxmox N150',         host: '192.168.10.2',  port: 8006, color: 'purple' },
+    { name: 'Proxmox Winterlegacy', host: '192.168.10.20', port: 8006, color: 'amber' },
   ],
 
   services: [
-    { name: 'Nextcloud',      url: 'https://cloud.o-io.cz',      icon: 'ti-cloud' },
-    { name: 'Home Assistant', url: 'https://home.o-io.cz',       icon: 'ti-smart-home' },
-    { name: 'BookStack',      url: 'https://work.o-io.cz',       icon: 'ti-book' },
-    { name: 'Jellyfin',       url: 'http://192.168.10.52:8096',  icon: 'ti-movie' },
+    { name: 'Nextcloud',      url: 'https://cloud.o-io.cz',      icon: 'ti-cloud',       color: 'blue' },
+    { name: 'Home Assistant', url: 'https://home.o-io.cz',       icon: 'ti-smart-home',  color: 'green' },
+    { name: 'BookStack',      url: 'https://work.o-io.cz',       icon: 'ti-book',        color: 'indigo' },
+    { name: 'Jellyfin',       url: 'http://192.168.10.52:8096',  icon: 'ti-movie',       color: 'teal' },
   ],
 
   status: {},
@@ -86,15 +86,21 @@ var Homelab = {
     el.innerHTML = this.proxmoxNodes.map(function(n) {
       var url = 'http://' + n.host + ':' + n.port;
       return '<div class="card" onclick="window.open(\'' + url + '\',\'_blank\',\'noopener\')" style="cursor:pointer;">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">' +
+        '<div class="icon-badge ' + n.color + '"><i class="ti ti-server"></i></div>' +
+        '<div style="flex:1;">' +
         '<div style="font-size:13px;color:var(--text-1);">' + n.name + '</div>' +
+        '<div style="font-size:11px;color:var(--text-4);">' + n.host + ':' + n.port + '</div>' +
+        '</div>' +
         '<span class="dot gray" id="pmx-dot-' + n.host.replace(/\./g, '-') + '"></span>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--text-4);margin-bottom:10px;">' + n.host + ':' + n.port + '</div>' +
-        '<div class="status-row"><span class="status-name">CPU</span><span class="status-val">— % · — °C</span></div>' +
-        '<div class="status-row"><span class="status-name">RAM</span><span class="status-val">— / —</span></div>' +
-        '<div class="status-row"><span class="status-name">Disk</span><span class="status-val">— / —</span></div>' +
-        '<div style="font-size:10px;color:var(--text-5);margin-top:8px;">data se načítají lokálně</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">' +
+        '<div class="mini-stat"><span class="mini-stat-label">CPU</span><span class="mini-stat-val">— %</span>' + '<div class="bar-wrap" style="margin-top:2px;"><div class="bar" style="width:0%;"></div></div>' + '</div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Teplota</span><span class="mini-stat-val">— °C</span>' + '<div class="bar-wrap" style="margin-top:2px;"><div class="bar" style="width:0%;"></div></div>' + '</div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">RAM</span><span class="mini-stat-val">—</span>' + '<div class="bar-wrap" style="margin-top:2px;"><div class="bar" style="width:0%;"></div></div>' + '</div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Disk</span><span class="mini-stat-val">—</span>' + '<div class="bar-wrap" style="margin-top:2px;"><div class="bar" style="width:0%;"></div></div>' + '</div>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text-5);margin-top:10px;">data se načítají lokálně</div>' +
         '</div>';
     }).join('');
 
@@ -117,12 +123,14 @@ var Homelab = {
     if (!el) return;
 
     el.innerHTML = this.services.map(function(s, i) {
-      return '<div class="card" onclick="window.open(\'' + s.url + '\',\'_blank\',\'noopener\')" style="cursor:pointer;text-align:center;">' +
-        '<i class="ti ' + s.icon + '" style="font-size:22px;color:var(--text-2);"></i>' +
-        '<div style="font-size:12px;color:var(--text-2);margin-top:10px;">' + s.name + '</div>' +
-        '<div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;">' +
+      return '<div class="card" onclick="window.open(\'' + s.url + '\',\'_blank\',\'noopener\')" style="cursor:pointer;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">' +
+        '<div class="icon-badge ' + s.color + '"><i class="ti ' + s.icon + '"></i></div>' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:13px;color:var(--text-1);">' + s.name + '</div>' +
+        '<div style="font-size:10px;color:var(--text-5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + s.url.replace(/^https?:\/\//, '') + '</div>' +
+        '</div>' +
         '<span class="dot gray" id="svc-dot-' + i + '"></span>' +
-        '<span style="font-size:10px;color:var(--text-5);">' + s.url.replace(/^https?:\/\//, '') + '</span>' +
         '</div>' +
         '</div>';
     }).join('');
@@ -193,8 +201,9 @@ var Homelab = {
     var pass = Store.get('wow_soap_pass');
 
     el.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
-      '<div style="font-size:13px;color:var(--text-1);">WoW server</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+      '<div class="icon-badge green"><i class="ti ti-sword"></i></div>' +
+      '<div style="font-size:13px;color:var(--text-1);flex:1;">WoW server</div>' +
       '<span class="dot gray" id="wow-dot"></span>' +
       '</div>' +
       '<div class="status-row"><span class="status-name">Status</span><span class="status-val" id="wow-status">—</span></div>' +
@@ -261,7 +270,10 @@ var Homelab = {
 
     if (!token) {
       el.innerHTML =
-        '<div style="font-size:13px;color:var(--text-1);margin-bottom:12px;">UPS</div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+        '<div class="icon-badge amber"><i class="ti ti-bolt"></i></div>' +
+        '<div style="font-size:13px;color:var(--text-1);">UPS</div>' +
+        '</div>' +
         '<div style="font-size:12px;color:var(--text-4);margin-bottom:10px;">Pro živá data zadej Home Assistant Long-Lived Access Token.</div>' +
         '<input id="ha-token-input" type="password" placeholder="HA token..." ' +
         'style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;margin-bottom:8px;" ' +
@@ -271,8 +283,9 @@ var Homelab = {
     }
 
     el.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
-      '<div style="font-size:13px;color:var(--text-1);">UPS</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+      '<div class="icon-badge amber"><i class="ti ti-bolt"></i></div>' +
+      '<div style="font-size:13px;color:var(--text-1);flex:1;">UPS</div>' +
       '<button class="btn" onclick="Homelab.refreshUps()" style="font-size:11px;padding:3px 8px;"><i class="ti ti-refresh"></i> Refresh</button>' +
       '</div>' +
       '<div class="status-row"><span class="status-name">Kapacita baterie</span><span class="status-val" id="ups-charge">—</span></div>' +

@@ -135,15 +135,16 @@ var Finance = {
       var income  = (p.incomes || []).reduce(function(s, i) { return s + (i.amount || 0); }, 0);
       var zustatek = income - paid;
 
-      return '<div class="status-row" style="cursor:pointer;" onclick="App.navigate(\'finance-plan\',' + p.year + ')">' +
-        '<span class="status-name">Rok ' + p.year + '</span>' +
-        '<span style="display:flex;gap:16px;align-items:center;font-size:12px;color:var(--text-3);">' +
-        '<span>Náklady: ' + formatCzk(planned) + '</span>' +
-        '<span>Přijato: ' + formatCzk(income) + '</span>' +
-        '<span>Zaplaceno: ' + formatCzk(paid) + '</span>' +
-        '<span style="color:' + financeAmountColor(zustatek) + ';">Zůstatek: ' + formatCzk(zustatek) + '</span>' +
+      return '<div class="status-row" style="cursor:pointer;align-items:center;" onclick="App.navigate(\'finance-plan\',' + p.year + ')">' +
+        '<span class="status-name" style="min-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Rok ' + p.year + '</span>' +
+        '<div style="display:flex;gap:28px;flex:1;">' +
+        '<div class="mini-stat"><span class="mini-stat-label">Celk. náklady</span><span class="mini-stat-val">' + formatCzk(planned) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Přijato</span><span class="mini-stat-val" style="color:var(--green);">' + formatCzk(income) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Zaplaceno</span><span class="mini-stat-val">' + formatCzk(paid) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Zůstatek</span><span class="mini-stat-val" style="color:' + financeAmountColor(zustatek) + ';">' + formatCzk(zustatek) + '</span></div>' +
+        '</div>' +
         '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="event.stopPropagation();Finance.deletePlan(\'' + p.id + '\')"></i>' +
-        '</span></div>';
+        '</div>';
     }).join('');
   },
 
@@ -165,13 +166,15 @@ var Finance = {
 
     el.innerHTML = savings.map(function(g) {
       var pct = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
-      return '<div class="status-row" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:6px;" onclick="App.navigate(\'finance-savings\')">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;">' +
-        '<span class="status-name">' + financeEsc(g.name) + '</span>' +
-        '<span style="display:flex;gap:12px;align-items:center;font-size:12px;color:var(--text-3);">' +
-        '<span>' + formatCzk(g.saved) + ' / ' + formatCzk(g.target) + ' (' + pct + ' %)</span>' +
+      return '<div class="status-row" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:8px;" onclick="App.navigate(\'finance-savings\')">' +
+        '<div style="display:flex;align-items:center;">' +
+        '<span class="status-name" style="min-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + financeEsc(g.name) + '</span>' +
+        '<div style="display:flex;gap:28px;flex:1;">' +
+        '<div class="mini-stat"><span class="mini-stat-label">Cílová částka</span><span class="mini-stat-val">' + formatCzk(g.target) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Našetřeno</span><span class="mini-stat-val" style="color:var(--green);">' + formatCzk(g.saved) + ' (' + pct + ' %)</span></div>' +
+        '</div>' +
         '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="event.stopPropagation();Finance.deleteSavings(\'' + g.id + '\')"></i>' +
-        '</span></div>' +
+        '</div>' +
         financeBar(pct, 'green') +
         '</div>';
     }).join('');
@@ -197,14 +200,15 @@ var Finance = {
       var income = (a.transactions || []).filter(function(t) { return t.amount > 0; }).reduce(function(s, t) { return s + t.amount; }, 0);
       var paid   = (a.transactions || []).filter(function(t) { return t.amount < 0; }).reduce(function(s, t) { return s + Math.abs(t.amount); }, 0);
 
-      return '<div class="status-row" style="cursor:pointer;" onclick="App.navigate(\'finance-shopping\',\'' + a.id + '\')">' +
-        '<span class="status-name">' + financeEsc(a.name) + '</span>' +
-        '<span style="display:flex;gap:16px;align-items:center;font-size:12px;color:var(--text-3);">' +
-        '<span>Na účtu: ' + formatCzk(a.balance) + '</span>' +
-        '<span>Přijato: ' + formatCzk(income) + '</span>' +
-        '<span>Uhrazeno: ' + formatCzk(paid) + '</span>' +
+      return '<div class="status-row" style="cursor:pointer;align-items:center;" onclick="App.navigate(\'finance-shopping\',\'' + a.id + '\')">' +
+        '<span class="status-name" style="min-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + financeEsc(a.name) + '</span>' +
+        '<div style="display:flex;gap:28px;flex:1;">' +
+        '<div class="mini-stat"><span class="mini-stat-label">Na účtu</span><span class="mini-stat-val">' + formatCzk(a.balance) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Přijato</span><span class="mini-stat-val" style="color:var(--green);">' + formatCzk(income) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Uhrazeno</span><span class="mini-stat-val" style="color:var(--red);">' + formatCzk(paid) + '</span></div>' +
+        '</div>' +
         '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="event.stopPropagation();Finance.deleteShopping(\'' + a.id + '\')"></i>' +
-        '</span></div>';
+        '</div>';
     }).join('');
   },
 
@@ -228,14 +232,15 @@ var Finance = {
       var profit = (inv.value || 0) - (inv.deposited || 0);
       var pct = inv.deposited > 0 ? ((profit / inv.deposited) * 100).toFixed(1) : '0.0';
 
-      return '<div class="status-row" style="cursor:pointer;" onclick="App.navigate(\'finance-invest\',\'' + inv.id + '\')">' +
-        '<span class="status-name">' + financeEsc(inv.name) + '</span>' +
-        '<span style="display:flex;gap:16px;align-items:center;font-size:12px;color:var(--text-3);">' +
-        '<span>Vloženo: ' + formatCzk(inv.deposited) + '</span>' +
-        '<span>Hodnota: ' + formatCzk(inv.value) + '</span>' +
-        '<span style="color:' + financeAmountColor(profit) + ';">Zisk/Ztráta: ' + formatCzk(profit) + ' / ' + pct + ' %</span>' +
+      return '<div class="status-row" style="cursor:pointer;align-items:center;" onclick="App.navigate(\'finance-invest\',\'' + inv.id + '\')">' +
+        '<span class="status-name" style="min-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + financeEsc(inv.name) + '</span>' +
+        '<div style="display:flex;gap:28px;flex:1;">' +
+        '<div class="mini-stat"><span class="mini-stat-label">Vloženo</span><span class="mini-stat-val">' + formatCzk(inv.deposited) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Hodnota</span><span class="mini-stat-val">' + formatCzk(inv.value) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Zisk/Ztráta</span><span class="mini-stat-val" style="color:' + financeAmountColor(profit) + ';">' + formatCzk(profit) + ' (' + pct + ' %)</span></div>' +
+        '</div>' +
         '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="event.stopPropagation();Finance.deleteInvest(\'' + inv.id + '\')"></i>' +
-        '</span></div>';
+        '</div>';
     }).join('');
   },
 

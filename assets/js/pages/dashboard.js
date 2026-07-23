@@ -103,7 +103,7 @@ var Dashboard = {
           <span style="width:14px;height:14px;min-width:14px;border-radius:3px;border:0.5px solid var(--border-3);display:inline-block;"></span>
           <span style="font-size:13px;color:var(--text-2);">${this.esc(t.title)}</span>
         </span>
-        <span class="tag ${this.esc(t.project || 'osobni')}">${this.esc(t.projectLabel || 'Osobní')}</span>
+        <span class="tag ${this.esc(t.project || 'osobni')}">${this.esc(this.projectLabel(t.project))}</span>
       </div>
     `).join('');
   },
@@ -126,17 +126,32 @@ var Dashboard = {
       return;
     }
 
+    const typeMeta = {
+      skica:    { label: 'Skica',    color: 'var(--yellow)', bg: 'var(--yellow-bg)' },
+      diagram:  { label: 'Diagram',  color: 'var(--accent)', bg: 'var(--accent-bg)' },
+      poznamka: { label: 'Poznámka', color: 'var(--text-3)', bg: 'var(--bg-hover)' },
+    };
+
     const grid = document.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;';
-    grid.innerHTML = recent.map(n => `
-      <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:border-color 0.1s;"
+    grid.innerHTML = recent.map(n => {
+      const t = typeMeta[n.type] || typeMeta.poznamka;
+      return `
+      <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:border-color 0.1s;display:flex;flex-direction:column;gap:8px;"
            onmouseover="this.style.borderColor='var(--border-3)'"
            onmouseout="this.style.borderColor='var(--border)'"
            onclick="App.navigate('notes-list')">
-        <div style="font-size:13px;color:var(--text-2);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this.esc(n.title)}</div>
-        <div style="font-size:11px;color:var(--text-4);">${this.esc(n.type || 'poznámka')}</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+          <div style="font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">${this.esc(n.title)}</div>
+          <span style="font-size:10px;padding:2px 6px;border-radius:4px;flex-shrink:0;color:${t.color};background:${t.bg};">${t.label}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--text-4);">${this.relativeDate(n.updated || n.created)}</span>
+          <span class="tag ${this.esc(n.project || 'osobni')}">${this.esc(this.projectLabel(n.project))}</span>
+        </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Tlačítko nová poznámka
     const newBtn = document.createElement('div');
@@ -202,6 +217,23 @@ var Dashboard = {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  },
+
+  projectLabel(id) {
+    const labels = { homelab: 'Homelab', wow: 'WoW', goat: 'GoatPatrik', forge: 'StrokeForge', osobni: 'Osobní' };
+    return labels[id] || 'Osobní';
+  },
+
+  relativeDate(d) {
+    if (!d) return '—';
+    const date = new Date(d);
+    const now  = new Date();
+    const startOfDay = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
+
+    if (diffDays === 0) return 'dnes';
+    if (diffDays === 1) return 'včera';
+    return String(date.getDate()) + '. ' + String(date.getMonth() + 1) + '.';
   },
 
 };

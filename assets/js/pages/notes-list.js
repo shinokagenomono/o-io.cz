@@ -96,20 +96,32 @@ var NotesList = {
   renderCard(note) {
     var type = this.types.find(function(t) { return t.id === note.type; }) || this.types[2];
     var proj = this.projects.find(function(p) { return p.id === note.project; }) || { id: 'osobni', label: 'Osobní' };
-    var date = new Date(note.updated || note.created || Date.now());
-    var dateStr = String(date.getDate()).padStart(2, '0') + '.' + String(date.getMonth() + 1).padStart(2, '0') + '.' + date.getFullYear();
+    var dateStr = this.relativeDate(note.updated || note.created || Date.now());
 
     return '<div class="card" onclick="NotesList.openEdit(\'' + note.id + '\')" ' +
       'style="cursor:pointer;min-height:120px;display:flex;flex-direction:column;gap:10px;">' +
-      '<div style="font-size:13px;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">' +
+      '<div style="font-size:13px;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">' +
       this.esc(note.title || '(bez názvu)') + '</div>' +
-      '<span style="font-size:11px;padding:2px 8px;border-radius:4px;align-self:flex-start;color:' + type.color + ';background:' + type.bg + ';">' +
+      '<span style="font-size:11px;padding:2px 8px;border-radius:4px;flex-shrink:0;color:' + type.color + ';background:' + type.bg + ';">' +
       type.label + '</span>' +
+      '</div>' +
       '<div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between;">' +
-      '<span class="tag ' + proj.id + '">' + proj.label + '</span>' +
       '<span style="font-size:11px;color:var(--text-4);">' + dateStr + '</span>' +
+      '<span class="tag ' + proj.id + '">' + proj.label + '</span>' +
       '</div>' +
       '</div>';
+  },
+
+  relativeDate(d) {
+    var date = new Date(d);
+    var now  = new Date();
+    var startOfDay = function(x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
+    var diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
+
+    if (diffDays === 0) return 'dnes';
+    if (diffDays === 1) return 'včera';
+    return String(date.getDate()) + '. ' + String(date.getMonth() + 1) + '.';
   },
 
   openNew() {
