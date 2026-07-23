@@ -36,7 +36,7 @@ const App = {
     this.navigate(startPage);
   },
 
-  navigate(page) {
+  navigate(page, param) {
     if (!this.pages[page]) page = 'dashboard';
 
     location.hash = page;
@@ -51,10 +51,11 @@ const App = {
 
     const moduleName = this.pages[page].module;
     const content = document.getElementById('content');
+    content.removeAttribute('style'); // reset inline stylů, co si stránky nastavují samy (padding, layout...)
     content.innerHTML = '';
 
     if (window[moduleName] && typeof window[moduleName].render === 'function') {
-      window[moduleName].render(content);
+      window[moduleName].render(content, param);
     } else {
       content.innerHTML = `<div style="color:var(--text-4);margin-top:40px;text-align:center;font-size:13px;">
         Stránka <strong>${page}</strong> se připravuje...
