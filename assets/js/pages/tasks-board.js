@@ -2,7 +2,7 @@
    Úkoly — Kanban Board
 =========================== */
 
-const TasksBoard = {
+var TasksBoard = {
 
   columns: [
     { id: 'backlog',    label: 'Backlog' },

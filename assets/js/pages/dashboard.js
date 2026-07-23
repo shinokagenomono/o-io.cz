@@ -2,7 +2,7 @@
    Dashboard
 =========================== */
 
-const Dashboard = {
+var Dashboard = {
 
   _clockInterval: null,
 
