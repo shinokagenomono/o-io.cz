@@ -61,7 +61,7 @@ const TasksBoard = {
   },
 
   refresh() {
-    const tasks = Storage.get('tasks') || [];
+    const tasks = Store.get('tasks') || [];
 
     this.columns.forEach(col => {
       const colEl = document.getElementById('col-' + col.id);
@@ -105,11 +105,11 @@ const TasksBoard = {
   onDrop(e, targetCol) {
     e.preventDefault();
     if (!this.dragSrc) return;
-    const tasks = Storage.get('tasks') || [];
+    const tasks = Store.get('tasks') || [];
     const task  = tasks.find(t => t.id === this.dragSrc);
     if (task) {
       task.status = targetCol;
-      Storage.set('tasks', tasks);
+      Store.set('tasks', tasks);
       this.refresh();
     }
     this.dragSrc = null;
@@ -118,7 +118,7 @@ const TasksBoard = {
   openNewTask(defaultStatus) {
     defaultStatus = defaultStatus || 'todo';
     this.openModal({
-      id: Storage.uid(),
+      id: Store.uid(),
       title: '',
       status: defaultStatus,
       priority: 'medium',
@@ -130,7 +130,7 @@ const TasksBoard = {
   },
 
   openEditTask(id) {
-    const tasks = Storage.get('tasks') || [];
+    const tasks = Store.get('tasks') || [];
     const task  = tasks.find(t => t.id === id);
     if (task) this.openModal(task, false);
   },
@@ -213,7 +213,7 @@ const TasksBoard = {
     var title = document.getElementById('t-title').value.trim();
     if (!title) { alert('Zadej název úkolu.'); return; }
 
-    var tasks = Storage.get('tasks') || [];
+    var tasks = Store.get('tasks') || [];
 
     if (isNew) {
       tasks.unshift({
@@ -236,15 +236,15 @@ const TasksBoard = {
       }
     }
 
-    Storage.set('tasks', tasks);
+    Store.set('tasks', tasks);
     this.closeModal();
     this.refresh();
   },
 
   deleteTask(id) {
     if (!confirm('Smazat úkol?')) return;
-    var tasks = (Storage.get('tasks') || []).filter(function(t) { return t.id !== id; });
-    Storage.set('tasks', tasks);
+    var tasks = (Store.get('tasks') || []).filter(function(t) { return t.id !== id; });
+    Store.set('tasks', tasks);
     this.closeModal();
     this.refresh();
   },
@@ -254,32 +254,32 @@ const TasksBoard = {
     var title = input.value.trim();
     if (!title) return;
 
-    var tasks = Storage.get('tasks') || [];
+    var tasks = Store.get('tasks') || [];
     var task  = tasks.find(function(t) { return t.id === taskId; });
     if (task) {
       task.subtasks = task.subtasks || [];
       task.subtasks.push({ title: title, done: false });
-      Storage.set('tasks', tasks);
+      Store.set('tasks', tasks);
       this.openEditTask(taskId);
     }
   },
 
   toggleSub(taskId, index, done) {
-    var tasks = Storage.get('tasks') || [];
+    var tasks = Store.get('tasks') || [];
     var task  = tasks.find(function(t) { return t.id === taskId; });
     if (task && task.subtasks[index]) {
       task.subtasks[index].done = done;
-      Storage.set('tasks', tasks);
+      Store.set('tasks', tasks);
       this.refresh();
     }
   },
 
   removeSub(taskId, index) {
-    var tasks = Storage.get('tasks') || [];
+    var tasks = Store.get('tasks') || [];
     var task  = tasks.find(function(t) { return t.id === taskId; });
     if (task) {
       task.subtasks.splice(index, 1);
-      Storage.set('tasks', tasks);
+      Store.set('tasks', tasks);
       this.openEditTask(taskId);
     }
   },

@@ -83,7 +83,7 @@ const Dashboard = {
     const el = document.getElementById('dash-tasks');
     if (!el) return;
 
-    const tasks  = Storage.get('tasks') || [];
+    const tasks  = Store.get('tasks') || [];
     const active = tasks.filter(t => t.status !== 'done').slice(0, 6);
 
     if (active.length === 0) {
@@ -112,7 +112,7 @@ const Dashboard = {
     const el = document.getElementById('dash-notes');
     if (!el) return;
 
-    const notes  = Storage.get('notes') || [];
+    const notes  = Store.get('notes') || [];
     const recent = notes.slice(0, 4);
 
     if (recent.length === 0) {
