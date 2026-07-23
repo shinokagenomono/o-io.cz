@@ -3,7 +3,298 @@
 =========================== */
 
 const TasksBoard = {
+
+  columns: [
+    { id: 'backlog',    label: 'Backlog' },
+    { id: 'todo',       label: 'Todo' },
+    { id: 'inprogress', label: 'In progress' },
+    { id: 'done',       label: 'Done' },
+  ],
+
+  projects: [
+    { id: 'homelab', label: 'Homelab' },
+    { id: 'wow',     label: 'WoW' },
+    { id: 'goat',    label: 'GoatPatrik' },
+    { id: 'forge',   label: 'StrokeForge' },
+    { id: 'osobni',  label: 'Osobní' },
+  ],
+
+  dragSrc: null,
+
   render(container) {
-    container.innerHTML = `<div style="color:var(--text-4);margin-top:40px;text-align:center;font-size:13px;">Board — připravuje se...</div>`;
-  }
+    App.setActions(`
+      <button class="btn primary" onclick="TasksBoard.openNewTask()">
+        <i class="ti ti-plus"></i> New task
+      </button>
+    `);
+
+    container.style.padding = '20px';
+    container.style.overflow = 'auto';
+
+    container.innerHTML = `
+      <div id="board" style="display:flex;gap:12px;min-height:calc(100vh - 120px);align-items:flex-start;">
+        ${this.columns.map(col => this.renderColumn(col)).join('')}
+      </div>
+      <div id="task-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;"></div>
+    `;
+
+    this.refresh();
+  },
+
+  renderColumn(col) {
+    return `
+      <div class="board-col" data-col="${col.id}"
+        style="width:220px;min-width:220px;display:flex;flex-direction:column;gap:8px;"
+        ondragover="event.preventDefault()"
+        ondrop="TasksBoard.onDrop(event,'${col.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;">
+          <div style="font-size:12px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:0.6px;display:flex;align-items:center;gap:8px;">
+            ${col.label}
+            <span id="count-${col.id}" style="font-size:11px;background:var(--bg-hover);color:var(--text-4);padding:1px 6px;border-radius:10px;">0</span>
+          </div>
+          <span style="font-size:20px;color:var(--text-5);cursor:pointer;line-height:1;"
+                onclick="TasksBoard.openNewTask('${col.id}')">+</span>
+        </div>
+        <div id="col-${col.id}" style="display:flex;flex-direction:column;gap:8px;min-height:40px;"></div>
+      </div>
+    `;
+  },
+
+  refresh() {
+    const tasks = Storage.get('tasks') || [];
+
+    this.columns.forEach(col => {
+      const colEl = document.getElementById('col-' + col.id);
+      const count = document.getElementById('count-' + col.id);
+      if (!colEl) return;
+
+      const colTasks = tasks.filter(t => t.status === col.id);
+      if (count) count.textContent = colTasks.length;
+
+      colEl.innerHTML = colTasks.map(t => this.renderCard(t)).join('');
+
+      colEl.querySelectorAll('.task-card').forEach(card => {
+        card.addEventListener('dragstart', e => {
+          this.dragSrc = card.dataset.id;
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('click', () => this.openEditTask(card.dataset.id));
+      });
+    });
+  },
+
+  renderCard(task) {
+    const proj = this.projects.find(p => p.id === task.project) || { id: 'osobni', label: 'Osobni' };
+    const subs = task.subtasks || [];
+    const done = subs.filter(s => s.done).length;
+    const prio = task.priority || 'low';
+    const prioColor = prio === 'high' ? 'var(--red)' : prio === 'medium' ? 'var(--yellow)' : 'var(--border-3)';
+
+    return '<div class="task-card" data-id="' + task.id + '" draggable="true"' +
+      ' style="background:var(--bg-card);border:0.5px solid var(--border);border-left:2px solid ' + prioColor + ';' +
+      'border-radius:8px;padding:12px;cursor:pointer;">' +
+      '<div style="font-size:13px;color:var(--text-2);line-height:1.4;margin-bottom:8px;">' + this.esc(task.title) + '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
+      '<span class="tag ' + proj.id + '">' + proj.label + '</span>' +
+      (subs.length > 0 ? '<span style="font-size:10px;color:var(--text-4);">' + done + '/' + subs.length + '</span>' : '') +
+      '</div>' +
+      (task.due ? '<div style="font-size:11px;color:var(--text-4);margin-top:6px;">' + this.esc(task.due) + '</div>' : '') +
+      '</div>';
+  },
+
+  onDrop(e, targetCol) {
+    e.preventDefault();
+    if (!this.dragSrc) return;
+    const tasks = Storage.get('tasks') || [];
+    const task  = tasks.find(t => t.id === this.dragSrc);
+    if (task) {
+      task.status = targetCol;
+      Storage.set('tasks', tasks);
+      this.refresh();
+    }
+    this.dragSrc = null;
+  },
+
+  openNewTask(defaultStatus) {
+    defaultStatus = defaultStatus || 'todo';
+    this.openModal({
+      id: Storage.uid(),
+      title: '',
+      status: defaultStatus,
+      priority: 'medium',
+      project: 'osobni',
+      subtasks: [],
+      due: '',
+      description: '',
+    }, true);
+  },
+
+  openEditTask(id) {
+    const tasks = Storage.get('tasks') || [];
+    const task  = tasks.find(t => t.id === id);
+    if (task) this.openModal(task, false);
+  },
+
+  openModal(task, isNew) {
+    const modal = document.getElementById('task-modal');
+    modal.style.display = 'flex';
+
+    const projOptions = this.projects.map(function(p) {
+      return '<option value="' + p.id + '"' + (task.project === p.id ? ' selected' : '') + '>' + p.label + '</option>';
+    }).join('');
+
+    const colOptions = this.columns.map(function(c) {
+      return '<option value="' + c.id + '"' + (task.status === c.id ? ' selected' : '') + '>' + c.label + '</option>';
+    }).join('');
+
+    const subs = task.subtasks || [];
+    const subtasksHtml = subs.map(function(s, i) {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);">' +
+        '<input type="checkbox"' + (s.done ? ' checked' : '') + ' onchange="TasksBoard.toggleSub(\'' + task.id + '\',' + i + ',this.checked)" style="cursor:pointer;" />' +
+        '<span style="font-size:13px;color:var(--text-2);flex:1;' + (s.done ? 'text-decoration:line-through;color:var(--text-4);' : '') + '">' + s.title + '</span>' +
+        '<i class="ti ti-x" style="font-size:13px;color:var(--text-5);cursor:pointer;" onclick="TasksBoard.removeSub(\'' + task.id + '\',' + i + ')"></i>' +
+        '</div>';
+    }).join('');
+
+    modal.innerHTML =
+      '<div style="background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:12px;width:480px;max-height:85vh;overflow-y:auto;padding:24px;">' +
+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">' +
+      '<div style="font-size:15px;font-weight:500;color:var(--text-1);">' + (isNew ? 'Nový úkol' : 'Upravit úkol') + '</div>' +
+      '<i class="ti ti-x" style="font-size:18px;color:var(--text-4);cursor:pointer;" onclick="TasksBoard.closeModal()"></i>' +
+      '</div>' +
+
+      '<div style="margin-bottom:14px;">' +
+      '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Název</div>' +
+      '<input id="t-title" value="' + this.esc(task.title) + '" placeholder="Název úkolu..."' +
+      ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
+      '</div>' +
+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">' +
+      '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Status</div>' +
+      '<select id="t-status" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + colOptions + '</select></div>' +
+      '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Projekt</div>' +
+      '<select id="t-project" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + projOptions + '</select></div>' +
+      '</div>' +
+
+      '<div style="margin-bottom:14px;">' +
+      '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Popis</div>' +
+      '<textarea id="t-desc" rows="3" placeholder="Volitelný popis..."' +
+      ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;resize:vertical;">' +
+      this.esc(task.description || '') + '</textarea>' +
+      '</div>' +
+
+      '<div style="margin-bottom:14px;">' +
+      '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Podúkoly</div>' +
+      '<div id="t-subtasks">' + subtasksHtml + '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:8px;">' +
+      '<input id="t-sub-new" placeholder="Přidat podúkol..."' +
+      ' style="flex:1;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;"' +
+      ' onkeydown="if(event.key===\'Enter\') TasksBoard.addSub(\'' + task.id + '\')" />' +
+      '<button class="btn" onclick="TasksBoard.addSub(\'' + task.id + '\')"><i class="ti ti-plus"></i></button>' +
+      '</div></div>' +
+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:0.5px solid var(--border);">' +
+      (!isNew ? '<button class="btn" onclick="TasksBoard.deleteTask(\'' + task.id + '\')" style="color:var(--red);border-color:var(--red-bg);"><i class="ti ti-trash"></i> Smazat</button>' : '<div></div>') +
+      '<div style="display:flex;gap:8px;">' +
+      '<button class="btn" onclick="TasksBoard.closeModal()">Zrušit</button>' +
+      '<button class="btn primary" onclick="TasksBoard.saveTask(\'' + task.id + '\',' + isNew + ')"><i class="ti ti-device-floppy"></i> Uložit</button>' +
+      '</div></div>' +
+
+      '</div>';
+
+    setTimeout(function() {
+      var t = document.getElementById('t-title');
+      if (t) t.focus();
+    }, 100);
+  },
+
+  saveTask(id, isNew) {
+    var title = document.getElementById('t-title').value.trim();
+    if (!title) { alert('Zadej název úkolu.'); return; }
+
+    var tasks = Storage.get('tasks') || [];
+
+    if (isNew) {
+      tasks.unshift({
+        id: id,
+        title: title,
+        status:      document.getElementById('t-status').value,
+        project:     document.getElementById('t-project').value,
+        description: document.getElementById('t-desc').value,
+        subtasks:    [],
+        due:         '',
+        priority:    'medium',
+      });
+    } else {
+      var task = tasks.find(function(t) { return t.id === id; });
+      if (task) {
+        task.title       = title;
+        task.status      = document.getElementById('t-status').value;
+        task.project     = document.getElementById('t-project').value;
+        task.description = document.getElementById('t-desc').value;
+      }
+    }
+
+    Storage.set('tasks', tasks);
+    this.closeModal();
+    this.refresh();
+  },
+
+  deleteTask(id) {
+    if (!confirm('Smazat úkol?')) return;
+    var tasks = (Storage.get('tasks') || []).filter(function(t) { return t.id !== id; });
+    Storage.set('tasks', tasks);
+    this.closeModal();
+    this.refresh();
+  },
+
+  addSub(taskId) {
+    var input = document.getElementById('t-sub-new');
+    var title = input.value.trim();
+    if (!title) return;
+
+    var tasks = Storage.get('tasks') || [];
+    var task  = tasks.find(function(t) { return t.id === taskId; });
+    if (task) {
+      task.subtasks = task.subtasks || [];
+      task.subtasks.push({ title: title, done: false });
+      Storage.set('tasks', tasks);
+      this.openEditTask(taskId);
+    }
+  },
+
+  toggleSub(taskId, index, done) {
+    var tasks = Storage.get('tasks') || [];
+    var task  = tasks.find(function(t) { return t.id === taskId; });
+    if (task && task.subtasks[index]) {
+      task.subtasks[index].done = done;
+      Storage.set('tasks', tasks);
+      this.refresh();
+    }
+  },
+
+  removeSub(taskId, index) {
+    var tasks = Storage.get('tasks') || [];
+    var task  = tasks.find(function(t) { return t.id === taskId; });
+    if (task) {
+      task.subtasks.splice(index, 1);
+      Storage.set('tasks', tasks);
+      this.openEditTask(taskId);
+    }
+  },
+
+  closeModal() {
+    var modal = document.getElementById('task-modal');
+    if (modal) modal.style.display = 'none';
+  },
+
+  esc: function(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  },
+
 };
