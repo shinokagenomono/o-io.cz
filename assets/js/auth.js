@@ -53,11 +53,9 @@ const Auth = {
     sessionStorage.setItem('oiocz_session', '1');
   },
 
-  // Odhlášení
+  // Odhlášení — smaže jen session, token a PIN zůstanou
   logout() {
     sessionStorage.removeItem('oiocz_session');
-    localStorage.removeItem('oiocz_token');
-    localStorage.removeItem('oiocz_pin');
     location.reload();
   },
 
