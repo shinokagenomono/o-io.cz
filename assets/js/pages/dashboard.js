@@ -11,7 +11,7 @@ var Dashboard = {
 
       <!-- Datum a čas -->
       <div style="margin-bottom: 24px;">
-        <div id="dash-clock" style="font-size: 72px; font-weight: 500; color: var(--text-1); letter-spacing: -2px; line-height: 1;">--:--</div>
+        <div id="dash-clock" style="font-size: 48px; font-weight: 500; color: var(--text-1); letter-spacing: -2px; line-height: 1;">--:--</div>
         <div id="dash-date" style="font-size: 14px; color: var(--text-4); margin-top: 6px;"></div>
       </div>
 

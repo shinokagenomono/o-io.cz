@@ -142,7 +142,7 @@ html, body {
 }
 
 .nav-sub .nav-item {
-  font-size: 12px;
+  font-size: 15px;
   padding: 6px 10px;
   color: var(--text-4);
 }
