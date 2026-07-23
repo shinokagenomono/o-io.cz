@@ -26,8 +26,16 @@ const App = {
   // Inicializace
   init() {
     this.bindNav();
-    const startPage = location.hash.replace('#', '') || 'dashboard';
-    this.navigate(startPage);
+
+    if (!Auth.isLoggedIn()) {
+      Auth.showLogin(() => {
+        const startPage = location.hash.replace('#', '') || 'dashboard';
+        this.navigate(startPage);
+      });
+    } else {
+      const startPage = location.hash.replace('#', '') || 'dashboard';
+      this.navigate(startPage);
+    }
   },
 
   // Navigace na stránku
