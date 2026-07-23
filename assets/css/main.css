@@ -8,32 +8,32 @@
 }
 
 :root {
-  --bg:        #0f0f0f;
-  --bg-card:   #141414;
-  --bg-hover:  #1e1e1e;
-  --border:    #222;
-  --border-2:  #2a2a2a;
-  --border-3:  #333;
+  --bg:        #0f1117;
+  --bg-card:   #161b27;
+  --bg-hover:  #1e2535;
+  --border:    #3d1414;
+  --border-2:  #7f1d1d;
+  --border-3:  #9f2c2c;
 
-  --text-1:    #e8e8e8;
-  --text-2:    #aaa;
-  --text-3:    #666;
-  --text-4:    #444;
-  --text-5:    #333;
+  --text-1:    #e2e8f0;
+  --text-2:    #9ca3af;
+  --text-3:    #6b7280;
+  --text-4:    #4b5563;
+  --text-5:    #374151;
 
-  --accent:    #7c8cf8;
-  --accent-bg: #1a1a2e;
-  --accent-br: #2a3060;
+  --accent:    #c9a84c;
+  --accent-bg: #3d3319;
+  --accent-br: #6b5a28;
 
-  --green:     #22c55e;
-  --green-bg:  #0d1f0d;
-  --green-br:  #1a3a1a;
+  --green:     #1d9e75;
+  --green-bg:  #082e26;
+  --green-br:  #145c4c;
 
-  --yellow:    #eab308;
-  --yellow-bg: #1f1700;
+  --yellow:    #ef9f27;
+  --yellow-bg: #3d2a0d;
 
-  --red:       #ef4444;
-  --red-bg:    #1f0d0d;
+  --red:       #e24b4a;
+  --red-bg:    #3d1414;
 
   --radius:    6px;
   --radius-lg: 10px;
@@ -182,7 +182,7 @@ html, body {
   justify-content: center;
   font-size: 11px;
   font-weight: 500;
-  color: #fff;
+  color: #1a1408;
   flex-shrink: 0;
 }
 
@@ -276,7 +276,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 10px 0;
-  border-bottom: 0.5px solid #1a1a1a;
+  border-bottom: 0.5px solid var(--border);
 }
 
 .status-row:last-child {
@@ -347,8 +347,8 @@ html, body {
 .tag.wow     { background: var(--green-bg);  color: var(--green); }
 .tag.goat    { background: var(--yellow-bg); color: var(--yellow); }
 .tag.forge   { background: var(--red-bg);    color: var(--red); }
-.tag.osobni  { background: #1a1a1a; color: var(--text-3); }
-.tag.chata   { background: #0d1a0d; color: #4ade80; }
+.tag.osobni  { background: var(--bg-hover); color: var(--text-3); }
+.tag.chata   { background: #0a2e22; color: #34d399; }
 
 /* Tlačítka */
 .btn {
@@ -377,7 +377,7 @@ html, body {
 }
 
 .btn.primary:hover {
-  background: #20204a;
+  background: #4a3d1f;
 }
 
 /* Progress bar */

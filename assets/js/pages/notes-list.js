@@ -15,7 +15,7 @@ var NotesList = {
   types: [
     { id: 'skica',    label: 'Skica',    color: 'var(--yellow)', bg: 'var(--yellow-bg)' },
     { id: 'diagram',  label: 'Diagram',  color: 'var(--accent)', bg: 'var(--accent-bg)' },
-    { id: 'poznamka', label: 'Poznámka', color: 'var(--text-3)', bg: '#1a1a1a' },
+    { id: 'poznamka', label: 'Poznámka', color: 'var(--text-3)', bg: 'var(--bg-hover)' },
   ],
 
   filter: 'all',

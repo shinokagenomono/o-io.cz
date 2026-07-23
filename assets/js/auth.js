@@ -79,7 +79,7 @@ const Auth = {
     const overlay = document.createElement('div');
     overlay.id = 'auth-overlay';
     overlay.style.cssText = `
-      position: fixed; inset: 0; background: #0f0f0f;
+      position: fixed; inset: 0; background: #0f1117;
       display: flex; align-items: center; justify-content: center;
       z-index: 9999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     `;
@@ -99,51 +99,51 @@ const Auth = {
       <div style="width:360px;">
 
         <div style="text-align:center;margin-bottom:32px;">
-          <div style="font-size:22px;font-weight:500;color:#e8e8e8;letter-spacing:-0.5px;">o-io.cz</div>
-          <div style="font-size:13px;color:#555;margin-top:6px;">První spuštění — nastavení přístupu</div>
+          <div style="font-size:22px;font-weight:500;color:#e2e8f0;letter-spacing:-0.5px;">o-io.cz</div>
+          <div style="font-size:13px;color:#6b7280;margin-top:6px;">První spuštění — nastavení přístupu</div>
         </div>
 
         <div id="auth-step-1">
           <div style="margin-bottom:16px;">
-            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">GitHub Personal Access Token</div>
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">GitHub Personal Access Token</div>
             <input id="auth-token" type="password" placeholder="ghp_xxxxxxxxxxxx"
-              style="width:100%;background:#141414;border:0.5px solid #2a2a2a;border-radius:6px;padding:10px 12px;font-size:13px;color:#e8e8e8;outline:none;"
-              onfocus="this.style.borderColor='#7c8cf8'"
-              onblur="this.style.borderColor='#2a2a2a'"
+              style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:10px 12px;font-size:13px;color:#e2e8f0;outline:none;"
+              onfocus="this.style.borderColor='#c9a84c'"
+              onblur="this.style.borderColor='#7f1d1d'"
             />
-            <div style="font-size:11px;color:#444;margin-top:6px;">
+            <div style="font-size:11px;color:#4b5563;margin-top:6px;">
               GitHub → Settings → Developer settings → Personal access tokens → Fine-grained → repo scope
             </div>
           </div>
-          <div id="auth-token-error" style="font-size:12px;color:#ef4444;margin-bottom:12px;display:none;"></div>
+          <div id="auth-token-error" style="font-size:12px;color:#e24b4a;margin-bottom:12px;display:none;"></div>
           <button id="auth-token-btn" onclick="Auth._submitToken()"
-            style="width:100%;padding:10px;background:#1a1a2e;border:0.5px solid #7c8cf8;border-radius:6px;color:#7c8cf8;font-size:13px;cursor:pointer;">
+            style="width:100%;padding:10px;background:#3d3319;border:0.5px solid #c9a84c;border-radius:6px;color:#c9a84c;font-size:13px;cursor:pointer;">
             Ověřit token
           </button>
         </div>
 
         <div id="auth-step-2" style="display:none;">
           <div style="margin-bottom:16px;">
-            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Nastavit PIN</div>
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Nastavit PIN</div>
             <input id="auth-pin-new" type="password" inputmode="numeric" maxlength="6" placeholder="4–6 číslic"
-              style="width:100%;background:#141414;border:0.5px solid #2a2a2a;border-radius:6px;padding:10px 12px;font-size:20px;color:#e8e8e8;outline:none;letter-spacing:8px;text-align:center;"
-              onfocus="this.style.borderColor='#7c8cf8'"
-              onblur="this.style.borderColor='#2a2a2a'"
+              style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:10px 12px;font-size:20px;color:#e2e8f0;outline:none;letter-spacing:8px;text-align:center;"
+              onfocus="this.style.borderColor='#c9a84c'"
+              onblur="this.style.borderColor='#7f1d1d'"
               onkeydown="if(event.key==='Enter') Auth._submitPinSetup()"
             />
           </div>
           <div style="margin-bottom:16px;">
-            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Potvrdit PIN</div>
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Potvrdit PIN</div>
             <input id="auth-pin-confirm" type="password" inputmode="numeric" maxlength="6" placeholder="4–6 číslic"
-              style="width:100%;background:#141414;border:0.5px solid #2a2a2a;border-radius:6px;padding:10px 12px;font-size:20px;color:#e8e8e8;outline:none;letter-spacing:8px;text-align:center;"
-              onfocus="this.style.borderColor='#7c8cf8'"
-              onblur="this.style.borderColor='#2a2a2a'"
+              style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:10px 12px;font-size:20px;color:#e2e8f0;outline:none;letter-spacing:8px;text-align:center;"
+              onfocus="this.style.borderColor='#c9a84c'"
+              onblur="this.style.borderColor='#7f1d1d'"
               onkeydown="if(event.key==='Enter') Auth._submitPinSetup()"
             />
           </div>
-          <div id="auth-pin-error" style="font-size:12px;color:#ef4444;margin-bottom:12px;display:none;"></div>
+          <div id="auth-pin-error" style="font-size:12px;color:#e24b4a;margin-bottom:12px;display:none;"></div>
           <button onclick="Auth._submitPinSetup()"
-            style="width:100%;padding:10px;background:#1a1a2e;border:0.5px solid #7c8cf8;border-radius:6px;color:#7c8cf8;font-size:13px;cursor:pointer;">
+            style="width:100%;padding:10px;background:#3d3319;border:0.5px solid #c9a84c;border-radius:6px;color:#c9a84c;font-size:13px;cursor:pointer;">
             Nastavit PIN a vstoupit
           </button>
         </div>
@@ -160,26 +160,26 @@ const Auth = {
       <div style="width:320px;text-align:center;">
 
         <div style="margin-bottom:32px;">
-          <div style="font-size:22px;font-weight:500;color:#e8e8e8;letter-spacing:-0.5px;">o-io.cz</div>
-          <div style="font-size:13px;color:#555;margin-top:6px;">Zadej PIN pro přístup</div>
+          <div style="font-size:22px;font-weight:500;color:#e2e8f0;letter-spacing:-0.5px;">o-io.cz</div>
+          <div style="font-size:13px;color:#6b7280;margin-top:6px;">Zadej PIN pro přístup</div>
         </div>
 
         <input id="auth-pin" type="password" inputmode="numeric" maxlength="6" placeholder="• • • •"
           autofocus
-          style="width:100%;background:#141414;border:0.5px solid #2a2a2a;border-radius:6px;padding:14px;font-size:28px;color:#e8e8e8;outline:none;letter-spacing:12px;text-align:center;margin-bottom:12px;"
-          onfocus="this.style.borderColor='#7c8cf8'"
-          onblur="this.style.borderColor='#2a2a2a'"
+          style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:14px;font-size:28px;color:#e2e8f0;outline:none;letter-spacing:12px;text-align:center;margin-bottom:12px;"
+          onfocus="this.style.borderColor='#c9a84c'"
+          onblur="this.style.borderColor='#7f1d1d'"
           onkeydown="if(event.key==='Enter') Auth._submitPin()"
         />
 
-        <div id="auth-error" style="font-size:12px;color:#ef4444;margin-bottom:12px;min-height:18px;"></div>
+        <div id="auth-error" style="font-size:12px;color:#e24b4a;margin-bottom:12px;min-height:18px;"></div>
 
         <button onclick="Auth._submitPin()"
-          style="width:100%;padding:10px;background:#1a1a2e;border:0.5px solid #7c8cf8;border-radius:6px;color:#7c8cf8;font-size:13px;cursor:pointer;margin-bottom:16px;">
+          style="width:100%;padding:10px;background:#3d3319;border:0.5px solid #c9a84c;border-radius:6px;color:#c9a84c;font-size:13px;cursor:pointer;margin-bottom:16px;">
           Vstoupit
         </button>
 
-        <div style="font-size:11px;color:#333;cursor:pointer;" onclick="Auth._resetDevice()">
+        <div style="font-size:11px;color:#374151;cursor:pointer;" onclick="Auth._resetDevice()">
           Jiné zařízení / reset tokenu
         </div>
 

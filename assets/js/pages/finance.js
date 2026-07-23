@@ -468,8 +468,10 @@ var FinanceSavings = {
     var savings = Store.get('finance_savings') || [];
 
     if (!savings.length) {
-      container.innerHTML = '<div style="color:var(--text-4);margin-top:40px;text-align:center;font-size:13px;">Zatím žádný cíl.<br>' +
-        '<button class="btn primary" onclick="FinanceSavings.openNew()" style="margin-top:10px;"><i class="ti ti-plus"></i> Nový cíl</button></div>';
+      container.innerHTML = '<div style="color:var(--text-4);margin-top:60px;text-align:center;font-size:13px;">' +
+        '<i class="ti ti-pig-money" style="font-size:40px;color:var(--text-5);display:block;margin-bottom:14px;"></i>' +
+        'Zatím žádný spořící cíl.<br>' +
+        '<button class="btn primary" onclick="FinanceSavings.openNew()" style="margin-top:14px;"><i class="ti ti-plus"></i> Nový cíl</button></div>';
       return;
     }
 
