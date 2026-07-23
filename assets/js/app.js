@@ -27,14 +27,16 @@ const App = {
   init() {
     this.bindNav();
 
-    if (!Auth.isLoggedIn()) {
-      Auth.showLogin(() => {
-        const startPage = location.hash.replace('#', '') || 'dashboard';
-        this.navigate(startPage);
-      });
-    } else {
+    const start = () => {
+      document.getElementById('app').style.display = 'flex';
       const startPage = location.hash.replace('#', '') || 'dashboard';
       this.navigate(startPage);
+    };
+
+    if (!Auth.isLoggedIn()) {
+      Auth.showLogin(() => start());
+    } else {
+      start();
     }
   },
 
