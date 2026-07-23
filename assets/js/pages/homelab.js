@@ -58,10 +58,15 @@ var Homelab = {
       <div class="section-title">Síť</div>
       <div class="card" id="hl-network" style="margin-bottom:20px;"></div>
 
-      <div class="grid-2">
-        <div class="card" id="hl-wow"></div>
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card" id="hl-wow" onclick="window.open('http://192.168.10.21','_blank','noopener')" style="cursor:pointer;"></div>
         <div class="card" id="hl-ups"></div>
       </div>
+
+      <div class="section-title">Zálohy</div>
+      <div class="card" id="hl-backups"></div>
+
+      <div id="backup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;"></div>
     `;
 
     this.renderProxmox();
@@ -69,6 +74,7 @@ var Homelab = {
     this.renderNetwork();
     this.renderWow();
     this.renderUps();
+    this.renderBackups();
   },
 
   // --- Sekce 1: Proxmox ---
@@ -157,10 +163,13 @@ var Homelab = {
     if (!el) return;
 
     var rows = [
-      { name: 'OPNsense',         val: '192.168.10.1',       url: 'http://192.168.10.1' },
-      { name: 'Cloudflare Tunnel', val: 'tunnel.o-io.cz',     url: null },
-      { name: 'Tailscale',        val: 'aktivní',             url: null },
-      { name: 'Dnsmasq',          val: '11 host overrides',   url: null },
+      { name: 'OPNsense',            val: '192.168.10.1',       url: 'http://192.168.10.1' },
+      { name: 'Cloudflare Tunnel',   val: 'tunnel.o-io.cz',     url: null },
+      { name: 'Tailscale',           val: 'aktivní',             url: null },
+      { name: 'Dnsmasq',             val: '11 host overrides',   url: null },
+      { name: 'Netdata N150',        val: '192.168.10.2:19999',  url: 'http://192.168.10.2:19999' },
+      { name: 'Netdata Winterlegacy', val: '192.168.10.21:19999', url: 'http://192.168.10.21:19999' },
+      { name: 'ESP32 displej',       val: '192.168.10.60',       url: 'http://192.168.10.60' },
     ];
 
     el.innerHTML = rows.map(function(r) {
@@ -320,6 +329,109 @@ var Homelab = {
         e.el.textContent = 'chyba';
       }
     }));
+  },
+
+  // --- Sekce 6: Zálohy ---
+
+  backupDefaults: [
+    { id: 'vm200',     name: 'WoW server (VM200)' },
+    { id: 'vm201',     name: 'Desktop (VM201)' },
+    { id: 'nextcloud', name: 'Nextcloud (LXC 101)' },
+    { id: 'tunnel',    name: 'Cloudflare Tunnel (LXC 102)' },
+    { id: 'ha',        name: 'Home Assistant (VM 103)' },
+    { id: 'jellyfin',  name: 'Jellyfin (LXC 104)' },
+    { id: 'bookstack', name: 'BookStack (LXC 105)' },
+    { id: 'samba',     name: 'Samba (LXC 106)' },
+  ],
+
+  getBackups() {
+    var stored = Store.get('backup_status');
+    if (stored && stored.length) return stored;
+
+    var fresh = this.backupDefaults.map(function(d) {
+      return { id: d.id, name: d.name, lastBackup: null, status: 'unknown' };
+    });
+    Store.set('backup_status', fresh);
+    return fresh;
+  },
+
+  backupStatusFor(lastBackup) {
+    if (!lastBackup) return 'unknown';
+    var days = (Date.now() - new Date(lastBackup).getTime()) / 86400000;
+    if (days < 7) return 'ok';
+    if (days <= 30) return 'warning';
+    return 'error';
+  },
+
+  formatDate(d) {
+    var date = new Date(d);
+    if (isNaN(date.getTime())) return '—';
+    return String(date.getDate()).padStart(2, '0') + '.' + String(date.getMonth() + 1).padStart(2, '0') + '.' + date.getFullYear();
+  },
+
+  renderBackups() {
+    var el = document.getElementById('hl-backups');
+    if (!el) return;
+
+    var backups = this.getBackups();
+    var dotClass = { ok: 'green', warning: 'yellow', error: 'red', unknown: 'gray' };
+
+    el.innerHTML = backups.map(function(b) {
+      var status  = Homelab.backupStatusFor(b.lastBackup);
+      var dateStr = b.lastBackup ? Homelab.formatDate(b.lastBackup) : 'Nezadáno';
+
+      return '<div class="status-row">' +
+        '<span class="status-name"><span class="dot ' + dotClass[status] + '"></span>' + b.name + '</span>' +
+        '<span style="display:flex;gap:12px;align-items:center;">' +
+        '<span class="status-val">' + dateStr + '</span>' +
+        '<button class="btn" onclick="Homelab.openBackupModal(\'' + b.id + '\')" style="font-size:11px;padding:3px 8px;"><i class="ti ti-refresh"></i> Aktualizovat</button>' +
+        '</span></div>';
+    }).join('');
+  },
+
+  openBackupModal(id) {
+    var backups = this.getBackups();
+    var b = backups.find(function(x) { return x.id === id; });
+    if (!b) return;
+
+    var modal = document.getElementById('backup-modal');
+    modal.style.display = 'flex';
+
+    var dateVal = b.lastBackup ? new Date(b.lastBackup).toISOString().slice(0, 10) : '';
+
+    modal.innerHTML =
+      '<div style="background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:12px;width:360px;padding:24px;">' +
+      '<div style="font-size:15px;font-weight:500;color:var(--text-1);margin-bottom:20px;">' + b.name + '</div>' +
+      '<div style="margin-bottom:20px;">' +
+      '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Datum poslední zálohy</div>' +
+      '<input id="backup-date-input" type="date" value="' + dateVal + '" ' +
+      'style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
+      '</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+      '<button class="btn" onclick="Homelab.closeBackupModal()">Zrušit</button>' +
+      '<button class="btn primary" onclick="Homelab.saveBackup(\'' + id + '\')">Uložit</button>' +
+      '</div></div>';
+  },
+
+  saveBackup(id) {
+    var input = document.getElementById('backup-date-input');
+    var dateStr = input ? input.value : '';
+
+    var backups = this.getBackups();
+    var b = backups.find(function(x) { return x.id === id; });
+    if (b) {
+      b.lastBackup = dateStr ? new Date(dateStr + 'T00:00:00').getTime() : null;
+      b.status = this.backupStatusFor(b.lastBackup);
+    }
+
+    Store.set('backup_status', backups);
+    this.closeBackupModal();
+    this.renderBackups();
+  },
+
+  closeBackupModal() {
+    var modal = document.getElementById('backup-modal');
+    if (modal) modal.style.display = 'none';
   },
 
 };
