@@ -15,6 +15,16 @@ var TasksBoard = {
   _modalTaskId: null,
   _modalSubtasks: [],
 
+  search: '',
+  projectFilter: 'all',
+  priorityFilter: 'all',
+
+  priorities: [
+    { id: 'high',   label: 'Vysoká' },
+    { id: 'medium', label: 'Střední' },
+    { id: 'low',    label: 'Nízká' },
+  ],
+
   render(container) {
     App.setActions(`
       <button class="btn primary" onclick="TasksBoard.openNewTask()">
@@ -26,12 +36,65 @@ var TasksBoard = {
     container.style.overflow = 'auto';
 
     container.innerHTML = `
-      <div id="board" style="display:flex;gap:12px;min-height:calc(100vh - 120px);align-items:flex-start;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <input id="tb-search" placeholder="Hledat úkol..." value="${this.esc(this.search)}"
+          oninput="TasksBoard.onSearch(this.value)"
+          style="width:200px;background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;" />
+        <div id="tb-project-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="tb-priority-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+      <div id="board" style="display:flex;gap:12px;min-height:calc(100vh - 170px);align-items:flex-start;">
         ${this.columns.map(col => this.renderColumn(col)).join('')}
       </div>
       <div id="task-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;"></div>
     `;
 
+    this.renderProjectFilters();
+    this.renderPriorityFilters();
+    this.refresh();
+  },
+
+  renderProjectFilters() {
+    var el = document.getElementById('tb-project-filters');
+    if (!el) return;
+
+    var tasks = Store.get('tasks') || [];
+    var projects = Array.from(new Set(tasks.map(function(t) { return t.project; }).filter(Boolean)));
+    if (!projects.length) { el.innerHTML = ''; return; }
+
+    var opts = ['all'].concat(projects);
+    el.innerHTML = opts.map(function(p) {
+      var active = TasksBoard.projectFilter === p;
+      var label  = p === 'all' ? 'Vše projekty' : p;
+      return '<button class="btn' + (active ? ' primary' : '') + '" onclick="TasksBoard.setProjectFilter(\'' + TasksBoard.esc(p).replace(/'/g, "\\'") + '\')">' + TasksBoard.esc(label) + '</button>';
+    }).join('');
+  },
+
+  renderPriorityFilters() {
+    var el = document.getElementById('tb-priority-filters');
+    if (!el) return;
+
+    var opts = [{ id: 'all', label: 'Vše priority' }].concat(this.priorities);
+    el.innerHTML = opts.map(function(p) {
+      var active = TasksBoard.priorityFilter === p.id;
+      return '<button class="btn' + (active ? ' primary' : '') + '" onclick="TasksBoard.setPriorityFilter(\'' + p.id + '\')">' + p.label + '</button>';
+    }).join('');
+  },
+
+  onSearch(v) {
+    this.search = v || '';
+    this.refresh();
+  },
+
+  setProjectFilter(p) {
+    this.projectFilter = p;
+    this.renderProjectFilters();
+    this.refresh();
+  },
+
+  setPriorityFilter(p) {
+    this.priorityFilter = p;
+    this.renderPriorityFilters();
     this.refresh();
   },
 
@@ -55,7 +118,18 @@ var TasksBoard = {
   },
 
   refresh() {
-    const tasks = Store.get('tasks') || [];
+    var tasks = Store.get('tasks') || [];
+    var search = this.search.toLowerCase();
+
+    if (search) {
+      tasks = tasks.filter(function(t) { return (t.title || '').toLowerCase().indexOf(search) !== -1; });
+    }
+    if (this.projectFilter !== 'all') {
+      tasks = tasks.filter(function(t) { return t.project === TasksBoard.projectFilter; });
+    }
+    if (this.priorityFilter !== 'all') {
+      tasks = tasks.filter(function(t) { return (t.priority || 'medium') === TasksBoard.priorityFilter; });
+    }
 
     this.columns.forEach(col => {
       const colEl = document.getElementById('col-' + col.id);
