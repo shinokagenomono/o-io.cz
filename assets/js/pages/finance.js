@@ -43,28 +43,17 @@ var Finance = {
   render(container) {
     App.setActions('');
 
-    var balance     = Store.get('finance_balance') || { amount: 0, updated: null };
     var plans       = Store.get('finance_plans') || [];
     var savings     = Store.get('finance_savings') || [];
     var shopping    = Store.get('finance_shopping') || [];
     var investments = Store.get('finance_investments') || [];
+    var balance     = this.computeBalance(plans, savings);
 
     container.innerHTML =
       '<div class="card" style="margin-bottom:20px;">' +
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;">' +
-      '<div>' +
       '<div class="section-title">Zůstatek na účtu</div>' +
-      '<div id="fin-balance-display" style="font-size:32px;font-weight:500;color:var(--text-1);">' + formatCzk(balance.amount) + '</div>' +
-      '<div style="font-size:11px;color:var(--text-4);margin-top:4px;">' + (balance.updated ? 'Aktualizováno ' + financeFormatDate(balance.updated) : 'Nikdy neaktualizováno') + '</div>' +
-      '</div>' +
-      '<i class="ti ti-pencil" style="font-size:16px;color:var(--text-4);cursor:pointer;" onclick="Finance.editBalance()"></i>' +
-      '</div>' +
-      '<div id="fin-balance-edit" style="display:none;margin-top:14px;display:flex;gap:8px;">' +
-      '<input id="fin-balance-input" type="number" value="' + balance.amount + '" ' +
-      'style="width:160px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:14px;color:var(--text-1);outline:none;" />' +
-      '<button class="btn primary" onclick="Finance.saveBalance()">Uložit</button>' +
-      '<button class="btn" onclick="Finance.cancelEditBalance()">Zrušit</button>' +
-      '</div>' +
+      '<div style="font-size:32px;font-weight:500;color:' + financeAmountColor(balance) + ';">' + formatCzk(balance) + '</div>' +
+      '<div style="font-size:11px;color:var(--text-4);margin-top:4px;">Počítá se automaticky — součet zůstatků Ročních plánů a Spoření</div>' +
       '</div>' +
 
       '<div class="card" style="margin-bottom:16px;">' +
@@ -105,19 +94,17 @@ var Finance = {
     this.renderInvest(investments);
   },
 
-  editBalance() {
-    document.getElementById('fin-balance-edit').style.display = 'flex';
-  },
-
-  cancelEditBalance() {
-    document.getElementById('fin-balance-edit').style.display = 'none';
-  },
-
-  saveBalance() {
-    var input = document.getElementById('fin-balance-input');
-    var amount = parseFloat(input.value) || 0;
-    Store.set('finance_balance', { amount: amount, updated: Date.now() });
-    this.render(document.getElementById('content'));
+  // Zůstatek na účtu = součet zůstatků (příjmy - zaplaceno) všech
+  // Ročních plánů + součet našetřeno ve Spoření. Nákupy a Investice
+  // do toho záměrně nespadají (jsou to oddělené účty/portfolio).
+  computeBalance(plans, savings) {
+    var fromPlans = plans.reduce(function(sum, p) {
+      var paid   = (p.categories || []).reduce(function(s, c) { return s + (c.paid || 0); }, 0);
+      var income = (p.incomes || []).reduce(function(s, i) { return s + (i.amount || 0); }, 0);
+      return sum + (income - paid);
+    }, 0);
+    var fromSavings = savings.reduce(function(sum, g) { return sum + (g.saved || 0); }, 0);
+    return fromPlans + fromSavings;
   },
 
   renderPlans(plans) {
@@ -173,7 +160,7 @@ var Finance = {
         '<div style="display:flex;gap:28px;flex:1;">' +
         '<div class="mini-stat"><span class="mini-stat-label">Cílová částka</span><span class="mini-stat-val">' + formatCzk(g.target) + '</span></div>' +
         '<div class="mini-stat"><span class="mini-stat-label">Našetřeno</span><span class="mini-stat-val" style="color:var(--green);">' + formatCzk(g.saved) + ' (' + pct + ' %)</span></div>' +
-        '<div class="mini-stat"><span class="mini-stat-label">Došetřit</span><span class="mini-stat-val" style="color:' + (dosetrit > 0 ? 'var(--yellow)' : 'var(--green)') + ';">' + formatCzk(dosetrit) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Došetřit</span><span class="mini-stat-val" style="color:' + (dosetrit > 0 ? 'var(--red)' : 'var(--green)') + ';">' + formatCzk(dosetrit) + '</span></div>' +
         '</div>' +
         '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="event.stopPropagation();Finance.deleteSavings(\'' + g.id + '\')"></i>' +
         '</div>' +
@@ -264,6 +251,8 @@ var FinancePlan = {
 
   currentYear: null,
   container: null,
+  editingCategoryId: null,
+  editingIncomeId: null,
 
   render(container, year) {
     this.container = container;
@@ -310,18 +299,16 @@ var FinancePlan = {
       '<div><div style="font-size:11px;color:var(--text-4);">Přijato</div><div style="font-size:18px;color:var(--text-1);">' + formatCzk(income) + '</div></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);">Zaplaceno</div><div style="font-size:18px;color:var(--text-1);">' + formatCzk(paid) + '</div></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);">Zbývá</div><div style="font-size:18px;color:' + financeAmountColor(zbyva) + ';">' + formatCzk(zbyva) + '</div></div>' +
-      '<div><div style="font-size:11px;color:var(--text-4);">Došetřit</div><div style="font-size:18px;color:' + (dosetrit > 0 ? 'var(--yellow)' : 'var(--green)') + ';">' + formatCzk(dosetrit) + '</div></div>' +
+      '<div><div style="font-size:11px;color:var(--text-4);">Došetřit</div><div style="font-size:18px;color:' + (dosetrit > 0 ? 'var(--red)' : 'var(--green)') + ';">' + formatCzk(dosetrit) + '</div></div>' +
       '</div></div>' +
 
       '<div class="card" style="margin-bottom:16px;">' +
       '<div class="section-title">Kategorie výdajů</div>' +
-      '<div id="fp-cat-header" style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;">' +
-      '<span style="flex:1;">Název</span><span style="width:100px;text-align:right;">Plánováno</span><span style="width:100px;text-align:right;">Zaplaceno</span>' +
-      '<span style="width:90px;text-align:right;">Zbývá</span><span style="width:90px;">Progress</span><span style="width:20px;"></span>' +
-      '</div>' +
       '<div id="fp-categories"></div>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">' +
       '<input id="fp-cat-name" placeholder="Název kategorie..." style="flex:1;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
+      '<input id="fp-cat-section" list="fp-section-list" placeholder="Sekce..." style="width:160px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text-1);outline:none;" autocomplete="off" />' +
+      '<datalist id="fp-section-list">' + this.sectionDatalist() + '</datalist>' +
       '<input id="fp-cat-planned" type="number" placeholder="Plánováno Kč" style="width:130px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
       '<button class="btn primary" onclick="FinancePlan.addCategory()"><i class="ti ti-plus"></i> Přidat</button>' +
       '</div></div>' +
@@ -329,7 +316,7 @@ var FinancePlan = {
       '<div class="card">' +
       '<div class="section-title">Příjmy</div>' +
       '<div id="fp-inc-header" style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;">' +
-      '<span style="width:90px;">Datum</span><span style="flex:1;">Kdo</span><span style="width:110px;text-align:right;">Částka</span><span style="width:20px;"></span>' +
+      '<span style="width:90px;">Datum</span><span style="flex:1;">Kdo</span><span style="width:110px;text-align:right;">Částka</span><span style="width:44px;"></span>' +
       '</div>' +
       '<div id="fp-incomes"></div>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">' +
@@ -366,6 +353,25 @@ var FinancePlan = {
     App.navigate('finance-plan', y);
   },
 
+  // Návrhy sekcí ze všech let, ne jen aktuálního roku — ať se
+  // stejné názvy (Sport a zábava, Škola + kroužky...) nabízí
+  // konzistentně rok od roku.
+  sectionDatalist() {
+    var plans = Store.get('finance_plans') || [];
+    var sections = [];
+    plans.forEach(function(p) {
+      (p.categories || []).forEach(function(c) { if (c.section) sections.push(c.section); });
+    });
+    return Array.from(new Set(sections)).map(function(s) {
+      return '<option value="' + financeEsc(s) + '"></option>';
+    }).join('');
+  },
+
+  getCurrentPlan() {
+    var plans = Store.get('finance_plans') || [];
+    return plans.find(function(p) { return p.year === FinancePlan.currentYear; });
+  },
+
   renderCategories(categories) {
     var el = document.getElementById('fp-categories');
     if (!el) return;
@@ -375,52 +381,105 @@ var FinancePlan = {
       return;
     }
 
-    el.innerHTML = categories.map(function(c) {
-      var zbyva = (c.planned || 0) - (c.paid || 0);
-      var pct = c.planned > 0 ? Math.round((c.paid / c.planned) * 100) : 0;
-      var isPaid = c.planned > 0 && c.paid >= c.planned;
+    var groups = {};
+    categories.forEach(function(c) {
+      var sec = c.section || '';
+      groups[sec] = groups[sec] || [];
+      groups[sec].push(c);
+    });
+    var sectionNames = Object.keys(groups).sort(function(a, b) {
+      if (!a) return 1;
+      if (!b) return -1;
+      return a.localeCompare(b, 'cs');
+    });
 
-      return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
-        '<span style="flex:1;color:var(--text-2);">' + financeEsc(c.name) + '</span>' +
-        '<input type="number" value="' + (c.planned || 0) + '" onchange="FinancePlan.editCategoryPlanned(\'' + c.id + '\',this.value)"' +
-        ' style="width:100px;text-align:right;background:transparent;border:none;outline:none;color:var(--text-3);font-size:13px;" />' +
-        '<input type="number" value="' + (c.paid || 0) + '" onchange="FinancePlan.editCategoryPaid(\'' + c.id + '\',this.value)"' +
-        ' style="width:100px;text-align:right;background:transparent;border:none;outline:none;color:var(--text-3);font-size:13px;" />' +
-        '<span style="width:90px;text-align:right;color:' + financeAmountColor(zbyva) + ';">' + formatCzk(zbyva) + '</span>' +
-        '<span style="width:90px;">' + financeBar(pct, isPaid ? 'green' : 'accent') + '</span>' +
-        '<span style="width:20px;"><i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.deleteCategory(\'' + c.id + '\')"></i></span>' +
-        '</div>';
+    var header = '<div style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;">' +
+      '<span style="flex:1;">Název</span><span style="width:100px;text-align:right;">Plánováno</span><span style="width:100px;text-align:right;">Zaplaceno</span>' +
+      '<span style="width:90px;text-align:right;">Zbývá</span><span style="width:90px;">Progress</span><span style="width:44px;"></span>' +
+      '</div>';
+
+    el.innerHTML = header + sectionNames.map(function(sec) {
+      var groupHeader = '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;padding:10px 0 4px;">' +
+        (sec ? financeEsc(sec) : 'Bez sekce') + '</div>';
+      return groupHeader + groups[sec].map(function(c) { return FinancePlan.renderCategoryRow(c); }).join('');
     }).join('');
+  },
+
+  renderCategoryRow(c) {
+    var zbyva = (c.planned || 0) - (c.paid || 0);
+    var pct = c.planned > 0 ? Math.round((c.paid / c.planned) * 100) : 0;
+    var isPaid = c.planned > 0 && c.paid >= c.planned;
+
+    if (this.editingCategoryId === c.id) {
+      return '<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
+        '<input type="text" id="fp-edit-cat-name" value="' + financeEsc(c.name) + '" placeholder="Název"' +
+        ' style="flex:1;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<input type="text" id="fp-edit-cat-section" list="fp-section-list" value="' + financeEsc(c.section || '') + '" placeholder="Sekce" autocomplete="off"' +
+        ' style="width:140px;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<input type="number" id="fp-edit-cat-planned" value="' + (c.planned || 0) + '"' +
+        ' style="width:100px;text-align:right;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<input type="number" id="fp-edit-cat-paid" value="' + (c.paid || 0) + '"' +
+        ' style="width:100px;text-align:right;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<span style="width:44px;display:flex;gap:8px;">' +
+        '<i class="ti ti-check" style="color:var(--green);cursor:pointer;" onclick="FinancePlan.saveCategoryEdit(\'' + c.id + '\')"></i>' +
+        '<i class="ti ti-x" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.cancelCategoryEdit()"></i>' +
+        '</span></div>';
+    }
+
+    return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
+      '<span style="flex:1;color:var(--text-2);">' + financeEsc(c.name) + '</span>' +
+      '<span style="width:100px;text-align:right;color:var(--text-3);">' + formatCzk(c.planned) + '</span>' +
+      '<span style="width:100px;text-align:right;color:var(--text-3);">' + formatCzk(c.paid) + '</span>' +
+      '<span style="width:90px;text-align:right;color:' + financeAmountColor(zbyva) + ';">' + formatCzk(zbyva) + '</span>' +
+      '<span style="width:90px;">' + financeBar(pct, isPaid ? 'green' : 'accent') + '</span>' +
+      '<span style="width:44px;display:flex;gap:8px;">' +
+      '<i class="ti ti-pencil" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.editCategoryStart(\'' + c.id + '\')"></i>' +
+      '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.deleteCategory(\'' + c.id + '\')"></i>' +
+      '</span></div>';
   },
 
   addCategory() {
     var name    = document.getElementById('fp-cat-name').value.trim();
+    var section = document.getElementById('fp-cat-section').value.trim();
     var planned = parseFloat(document.getElementById('fp-cat-planned').value) || 0;
     if (!name) return;
 
     var plans = Store.get('finance_plans') || [];
     var plan  = plans.find(function(p) { return p.year === FinancePlan.currentYear; });
     plan.categories = plan.categories || [];
-    plan.categories.push({ id: Store.uid(), name: name, planned: planned, paid: 0 });
+    plan.categories.push({ id: Store.uid(), name: name, section: section, planned: planned, paid: 0 });
     Store.set('finance_plans', plans);
     this.render(this.container, this.currentYear);
   },
 
-  editCategoryPlanned(id, value) {
-    var plans = Store.get('finance_plans') || [];
-    var plan  = plans.find(function(p) { return p.year === FinancePlan.currentYear; });
-    var cat   = (plan.categories || []).find(function(c) { return c.id === id; });
-    if (cat) cat.planned = parseFloat(value) || 0;
-    Store.set('finance_plans', plans);
-    this.render(this.container, this.currentYear);
+  editCategoryStart(id) {
+    this.editingCategoryId = id;
+    this.renderCategories(this.getCurrentPlan().categories || []);
   },
 
-  editCategoryPaid(id, value) {
+  cancelCategoryEdit() {
+    this.editingCategoryId = null;
+    this.renderCategories(this.getCurrentPlan().categories || []);
+  },
+
+  saveCategoryEdit(id) {
+    var name    = document.getElementById('fp-edit-cat-name').value.trim();
+    var section = document.getElementById('fp-edit-cat-section').value.trim();
+    var planned = parseFloat(document.getElementById('fp-edit-cat-planned').value) || 0;
+    var paid    = parseFloat(document.getElementById('fp-edit-cat-paid').value) || 0;
+    if (!name) return;
+
     var plans = Store.get('finance_plans') || [];
     var plan  = plans.find(function(p) { return p.year === FinancePlan.currentYear; });
     var cat   = (plan.categories || []).find(function(c) { return c.id === id; });
-    if (cat) cat.paid = parseFloat(value) || 0;
+    if (cat) {
+      cat.name    = name;
+      cat.section = section;
+      cat.planned = planned;
+      cat.paid    = paid;
+    }
     Store.set('finance_plans', plans);
+    this.editingCategoryId = null;
     this.render(this.container, this.currentYear);
   },
 
@@ -442,14 +501,33 @@ var FinancePlan = {
       return;
     }
 
-    el.innerHTML = incomes.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); }).map(function(i) {
-      return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
-        '<span style="width:90px;color:var(--text-3);">' + financeFormatDate(i.date) + '</span>' +
-        '<span style="flex:1;color:var(--text-2);">' + financeEsc(i.who) + '</span>' +
-        '<span style="width:110px;text-align:right;color:var(--green);">' + formatCzk(i.amount) + '</span>' +
-        '<span style="width:20px;"><i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.deleteIncome(\'' + i.id + '\')"></i></span>' +
-        '</div>';
-    }).join('');
+    el.innerHTML = incomes.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); })
+      .map(function(i) { return FinancePlan.renderIncomeRow(i); }).join('');
+  },
+
+  renderIncomeRow(i) {
+    if (this.editingIncomeId === i.id) {
+      return '<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
+        '<input type="date" id="fp-edit-inc-date" value="' + (i.date || '') + '"' +
+        ' style="width:150px;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<input type="text" id="fp-edit-inc-who" value="' + financeEsc(i.who) + '" placeholder="Kdo"' +
+        ' style="flex:1;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<input type="number" id="fp-edit-inc-amount" value="' + i.amount + '"' +
+        ' style="width:110px;text-align:right;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<span style="width:44px;display:flex;gap:8px;">' +
+        '<i class="ti ti-check" style="color:var(--green);cursor:pointer;" onclick="FinancePlan.saveIncomeEdit(\'' + i.id + '\')"></i>' +
+        '<i class="ti ti-x" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.cancelIncomeEdit()"></i>' +
+        '</span></div>';
+    }
+
+    return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
+      '<span style="width:90px;color:var(--text-3);">' + financeFormatDate(i.date) + '</span>' +
+      '<span style="flex:1;color:var(--text-2);">' + financeEsc(i.who) + '</span>' +
+      '<span style="width:110px;text-align:right;color:' + financeAmountColor(i.amount) + ';">' + formatCzk(i.amount) + '</span>' +
+      '<span style="width:44px;display:flex;gap:8px;">' +
+      '<i class="ti ti-pencil" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.editIncomeStart(\'' + i.id + '\')"></i>' +
+      '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.deleteIncome(\'' + i.id + '\')"></i>' +
+      '</span></div>';
   },
 
   addIncome() {
@@ -463,6 +541,35 @@ var FinancePlan = {
     plan.incomes = plan.incomes || [];
     plan.incomes.push({ id: Store.uid(), date: date || null, who: who, amount: amount });
     Store.set('finance_plans', plans);
+    this.render(this.container, this.currentYear);
+  },
+
+  editIncomeStart(id) {
+    this.editingIncomeId = id;
+    this.renderIncomes(this.getCurrentPlan().incomes || []);
+  },
+
+  cancelIncomeEdit() {
+    this.editingIncomeId = null;
+    this.renderIncomes(this.getCurrentPlan().incomes || []);
+  },
+
+  saveIncomeEdit(id) {
+    var date   = document.getElementById('fp-edit-inc-date').value;
+    var who    = document.getElementById('fp-edit-inc-who').value.trim();
+    var amount = parseFloat(document.getElementById('fp-edit-inc-amount').value) || 0;
+    if (!who) return;
+
+    var plans = Store.get('finance_plans') || [];
+    var plan  = plans.find(function(p) { return p.year === FinancePlan.currentYear; });
+    var inc   = (plan.incomes || []).find(function(i) { return i.id === id; });
+    if (inc) {
+      inc.date   = date || null;
+      inc.who    = who;
+      inc.amount = amount;
+    }
+    Store.set('finance_plans', plans);
+    this.editingIncomeId = null;
     this.render(this.container, this.currentYear);
   },
 
@@ -507,7 +614,7 @@ var FinanceSavings = {
         '<div style="font-size:14px;color:var(--text-1);margin-bottom:10px;">' + financeEsc(g.name) + '</div>' +
         financeBar(pct, 'green') +
         '<div style="font-size:12px;color:var(--text-3);margin-top:8px;">Našetřeno: ' + formatCzk(g.saved) + ' z ' + formatCzk(g.target) + ' (' + pct + ' %)</div>' +
-        '<div style="font-size:12px;color:' + (dosetrit > 0 ? 'var(--yellow)' : 'var(--green)') + ';margin-bottom:14px;">Došetřit: ' + formatCzk(dosetrit) + '</div>' +
+        '<div style="font-size:12px;color:' + (dosetrit > 0 ? 'var(--red)' : 'var(--green)') + ';margin-bottom:14px;">Došetřit: ' + formatCzk(dosetrit) + '</div>' +
         '<div style="display:flex;gap:8px;">' +
         '<button class="btn" onclick="FinanceSavings.openDeposit(\'' + g.id + '\')"><i class="ti ti-plus"></i> Vklad</button>' +
         '<button class="btn" onclick="FinanceSavings.openEdit(\'' + g.id + '\')"><i class="ti ti-pencil"></i> Upravit</button>' +
