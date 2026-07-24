@@ -10,13 +10,21 @@ var Dashboard = {
     container.innerHTML = `
       <div style="display:flex;flex-direction:column;height:100%;">
 
-        <!-- Foto + Datum a čas -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom: 24px;flex-shrink:0;">
-          <img src="assets/img/avatar.jpg" alt="" style="height:320px;width:auto;border-radius:10px;border:1px solid var(--border);display:block;">
-          <div style="text-align:right;">
+        <!-- Čas (vlevo nahoře) + podpis (vpravo nahoře) -->
+        <div class="dash-header-top">
+          <div>
             <div id="dash-clock" style="font-size: 48px; font-weight: 500; color: var(--text-1); letter-spacing: -2px; line-height: 1;">--:--</div>
             <div id="dash-date" style="font-size: 14px; color: var(--text-4); margin-top: 6px;"></div>
           </div>
+          <div class="dash-signature">
+            <div class="dash-seal">死の影の者</div>
+            <div class="dash-signature-latin">Shi no Kage no Mono</div>
+          </div>
+        </div>
+
+        <!-- Foto -->
+        <div style="margin-bottom:24px;flex-shrink:0;">
+          <img src="assets/img/avatar.jpg" alt="" style="height:320px;width:auto;border-radius:10px;border:1px solid var(--border);display:block;">
         </div>
 
         <!-- Úkoly + Poznámky -->
