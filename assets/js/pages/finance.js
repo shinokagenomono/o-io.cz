@@ -316,8 +316,8 @@ var FinancePlan = {
       '<div class="card" style="margin-bottom:16px;">' +
       '<div class="section-title">Kategorie výdajů</div>' +
       '<div id="fp-cat-header" style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;">' +
-      '<span style="flex:1;">Název</span><span style="width:90px;text-align:right;">Plánováno</span><span style="width:90px;text-align:right;">Zaplaceno</span>' +
-      '<span style="width:90px;text-align:right;">Zbývá</span><span style="width:90px;">Progress</span><span style="width:70px;text-align:center;">Zaplaceno?</span><span style="width:20px;"></span>' +
+      '<span style="flex:1;">Název</span><span style="width:100px;text-align:right;">Plánováno</span><span style="width:100px;text-align:right;">Zaplaceno</span>' +
+      '<span style="width:90px;text-align:right;">Zbývá</span><span style="width:90px;">Progress</span><span style="width:20px;"></span>' +
       '</div>' +
       '<div id="fp-categories"></div>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">' +
@@ -382,11 +382,12 @@ var FinancePlan = {
 
       return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
         '<span style="flex:1;color:var(--text-2);">' + financeEsc(c.name) + '</span>' +
-        '<span style="width:90px;text-align:right;color:var(--text-3);">' + formatCzk(c.planned) + '</span>' +
-        '<span style="width:90px;text-align:right;color:var(--text-3);">' + formatCzk(c.paid) + '</span>' +
+        '<input type="number" value="' + (c.planned || 0) + '" onchange="FinancePlan.editCategoryPlanned(\'' + c.id + '\',this.value)"' +
+        ' style="width:100px;text-align:right;background:transparent;border:none;outline:none;color:var(--text-3);font-size:13px;" />' +
+        '<input type="number" value="' + (c.paid || 0) + '" onchange="FinancePlan.editCategoryPaid(\'' + c.id + '\',this.value)"' +
+        ' style="width:100px;text-align:right;background:transparent;border:none;outline:none;color:var(--text-3);font-size:13px;" />' +
         '<span style="width:90px;text-align:right;color:' + financeAmountColor(zbyva) + ';">' + formatCzk(zbyva) + '</span>' +
         '<span style="width:90px;">' + financeBar(pct, isPaid ? 'green' : 'accent') + '</span>' +
-        '<span style="width:70px;text-align:center;"><input type="checkbox"' + (isPaid ? ' checked' : '') + ' onchange="FinancePlan.toggleCategoryPaid(\'' + c.id + '\',this.checked)" style="cursor:pointer;" /></span>' +
         '<span style="width:20px;"><i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.deleteCategory(\'' + c.id + '\')"></i></span>' +
         '</div>';
     }).join('');
@@ -405,11 +406,20 @@ var FinancePlan = {
     this.render(this.container, this.currentYear);
   },
 
-  toggleCategoryPaid(id, checked) {
+  editCategoryPlanned(id, value) {
     var plans = Store.get('finance_plans') || [];
     var plan  = plans.find(function(p) { return p.year === FinancePlan.currentYear; });
     var cat   = (plan.categories || []).find(function(c) { return c.id === id; });
-    if (cat) cat.paid = checked ? cat.planned : 0;
+    if (cat) cat.planned = parseFloat(value) || 0;
+    Store.set('finance_plans', plans);
+    this.render(this.container, this.currentYear);
+  },
+
+  editCategoryPaid(id, value) {
+    var plans = Store.get('finance_plans') || [];
+    var plan  = plans.find(function(p) { return p.year === FinancePlan.currentYear; });
+    var cat   = (plan.categories || []).find(function(c) { return c.id === id; });
+    if (cat) cat.paid = parseFloat(value) || 0;
     Store.set('finance_plans', plans);
     this.render(this.container, this.currentYear);
   },
