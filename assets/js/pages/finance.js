@@ -121,7 +121,7 @@ var Finance = {
       return;
     }
 
-    el.innerHTML = plans.slice().sort(function(a, b) { return b.year - a.year; }).map(function(p) {
+    el.innerHTML = plans.slice().sort(function(a, b) { return a.year - b.year; }).map(function(p) {
       var planned = (p.categories || []).reduce(function(s, c) { return s + (c.planned || 0); }, 0);
       var paid    = (p.categories || []).reduce(function(s, c) { return s + (c.paid || 0); }, 0);
       var income  = (p.incomes || []).reduce(function(s, i) { return s + (i.amount || 0); }, 0);
@@ -424,10 +424,10 @@ var FinancePlan = {
         ' style="flex:1;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
         '<input type="text" id="fp-edit-cat-section" list="fp-section-list" value="' + financeEsc(c.section || '') + '" placeholder="Sekce" autocomplete="off"' +
         ' style="width:140px;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
-        '<input type="number" id="fp-edit-cat-planned" value="' + (c.planned || 0) + '"' +
-        ' style="width:100px;text-align:right;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
-        '<input type="number" id="fp-edit-cat-paid" value="' + (c.paid || 0) + '"' +
-        ' style="width:100px;text-align:right;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<input type="number" id="fp-edit-cat-planned" value="' + (c.planned || 0) + '" title="Plánováno"' +
+        ' style="width:100px;text-align:right;background:var(--bg);border:0.5px solid var(--green);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
+        '<input type="number" id="fp-edit-cat-paid" value="' + (c.paid || 0) + '" title="Zaplaceno"' +
+        ' style="width:100px;text-align:right;background:var(--bg);border:0.5px solid var(--red);border-radius:6px;padding:5px 8px;color:var(--text-1);font-size:13px;outline:none;" />' +
         '<span style="width:44px;display:flex;gap:8px;">' +
         '<i class="ti ti-check" style="color:var(--green);cursor:pointer;" onclick="FinancePlan.saveCategoryEdit(\'' + c.id + '\')"></i>' +
         '<i class="ti ti-x" style="color:var(--text-5);cursor:pointer;" onclick="FinancePlan.cancelCategoryEdit()"></i>' +
