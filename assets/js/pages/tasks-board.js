@@ -83,8 +83,17 @@ var TasksBoard = {
     });
   },
 
+  // Projekt je teď volný text (uživatel si ho píše sám), ale pro
+  // pár známých názvů si necháváme barevný tag jako dřív. Pro
+  // cokoliv jiného se zobrazí neutrální šedý tag s napsaným textem.
+  projectTagHtml(value) {
+    if (!value) return '';
+    const known = this.projects.find(p => p.id === value || p.label.toLowerCase() === value.toLowerCase());
+    if (known) return '<span class="tag ' + known.id + '">' + known.label + '</span>';
+    return '<span class="tag osobni">' + this.esc(value) + '</span>';
+  },
+
   renderCard(task) {
-    const proj = this.projects.find(p => p.id === task.project);
     const subs = task.subtasks || [];
     const done = subs.filter(s => s.done).length;
     const prio = task.priority || 'medium';
@@ -95,7 +104,7 @@ var TasksBoard = {
       'border-radius:8px;padding:12px;cursor:pointer;">' +
       '<div style="font-size:13px;color:var(--text-2);line-height:1.4;margin-bottom:8px;">' + this.esc(task.title) + '</div>' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
-      (proj ? '<span class="tag ' + proj.id + '">' + proj.label + '</span>' : '') +
+      this.projectTagHtml(task.project) +
       (subs.length > 0 ? '<span style="font-size:10px;color:var(--text-4);">' + done + '/' + subs.length + '</span>' : '') +
       '</div>' +
       (task.due ? '<div style="font-size:11px;color:var(--text-4);margin-top:6px;">' + this.esc(task.due) + '</div>' : '') +
@@ -139,10 +148,13 @@ var TasksBoard = {
     const modal = document.getElementById('task-modal');
     modal.style.display = 'flex';
 
-    const projOptions = '<option value=""' + (!task.project ? ' selected' : '') + '>— vyber —</option>' +
-      this.projects.map(function(p) {
-        return '<option value="' + p.id + '"' + (task.project === p.id ? ' selected' : '') + '>' + p.label + '</option>';
-      }).join('');
+    const existingProjects = Array.from(new Set(
+      (Store.get('tasks') || []).map(function(t) { return t.project; }).filter(Boolean)
+        .concat(this.projects.map(function(p) { return p.label; }))
+    ));
+    const projDatalist = existingProjects.map(function(p) {
+      return '<option value="' + p + '"></option>';
+    }).join('');
 
     const colOptions = this.columns.map(function(c) {
       return '<option value="' + c.id + '"' + (task.status === c.id ? ' selected' : '') + '>' + c.label + '</option>';
@@ -184,7 +196,9 @@ var TasksBoard = {
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Status</div>' +
       '<select id="t-status" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + colOptions + '</select></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Projekt</div>' +
-      '<select id="t-project" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + projOptions + '</select></div>' +
+      '<input id="t-project" list="t-project-list" value="' + this.esc(task.project || '') + '" placeholder="Napiš projekt..."' +
+      ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
+      '<datalist id="t-project-list">' + projDatalist + '</datalist></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Priorita</div>' +
       '<select id="t-priority" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + prioOptions + '</select></div>' +
       '</div>' +
