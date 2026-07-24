@@ -271,7 +271,10 @@ var FinancePlan = {
 
     if (!plans.length) {
       App.setActions('<button class="btn primary" onclick="FinancePlan.addYear()"><i class="ti ti-plus"></i> Přidat rok</button>');
-      container.innerHTML = '<div style="color:var(--text-4);margin-top:40px;text-align:center;font-size:13px;">Zatím žádný roční plán.</div>';
+      container.innerHTML = '<div style="color:var(--text-4);margin-top:60px;text-align:center;font-size:13px;">' +
+        '<i class="ti ti-calendar-stats" style="font-size:40px;color:var(--text-5);display:block;margin-bottom:14px;"></i>' +
+        'Zatím žádný roční plán.<br>' +
+        '<button class="btn primary" onclick="FinancePlan.addYear()" style="margin-top:14px;"><i class="ti ti-plus"></i> Přidat rok</button></div>';
       return;
     }
 
@@ -624,7 +627,10 @@ var FinanceShopping = {
 
     if (!accounts.length) {
       App.setActions('<button class="btn primary" onclick="FinanceShopping.addAccount()"><i class="ti ti-plus"></i> Nový účet</button>');
-      container.innerHTML = '<div style="color:var(--text-4);margin-top:40px;text-align:center;font-size:13px;">Zatím žádný účet.</div>';
+      container.innerHTML = '<div style="color:var(--text-4);margin-top:60px;text-align:center;font-size:13px;">' +
+        '<i class="ti ti-shopping-cart" style="font-size:40px;color:var(--text-5);display:block;margin-bottom:14px;"></i>' +
+        'Zatím žádný účet.<br>' +
+        '<button class="btn primary" onclick="FinanceShopping.addAccount()" style="margin-top:14px;"><i class="ti ti-plus"></i> Nový účet</button></div>';
       return;
     }
 
@@ -769,7 +775,10 @@ var FinanceInvest = {
 
     if (!investments.length) {
       App.setActions('<button class="btn primary" onclick="FinanceInvest.addInvestment()"><i class="ti ti-plus"></i> Nová investice</button>');
-      container.innerHTML = '<div style="color:var(--text-4);margin-top:40px;text-align:center;font-size:13px;">Zatím žádná investice.</div>';
+      container.innerHTML = '<div style="color:var(--text-4);margin-top:60px;text-align:center;font-size:13px;">' +
+        '<i class="ti ti-trending-up" style="font-size:40px;color:var(--text-5);display:block;margin-bottom:14px;"></i>' +
+        'Zatím žádná investice.<br>' +
+        '<button class="btn primary" onclick="FinanceInvest.addInvestment()" style="margin-top:14px;"><i class="ti ti-plus"></i> Nová investice</button></div>';
       return;
     }
 
