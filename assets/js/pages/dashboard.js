@@ -103,7 +103,7 @@ var Dashboard = {
           <span style="width:14px;height:14px;min-width:14px;border-radius:3px;border:0.5px solid var(--border-3);display:inline-block;"></span>
           <span style="font-size:13px;color:var(--text-2);">${this.esc(t.title)}</span>
         </span>
-        <span class="tag ${this.esc(t.project || 'osobni')}">${this.esc(this.projectLabel(t.project))}</span>
+        ${TasksBoard.projectTagHtml(t)}
       </div>
     `).join('');
   },

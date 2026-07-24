@@ -11,14 +11,6 @@ var TasksBoard = {
     { id: 'done',       label: 'Done' },
   ],
 
-  projects: [
-    { id: 'homelab', label: 'Homelab' },
-    { id: 'wow',     label: 'WoW' },
-    { id: 'goat',    label: 'GoatPatrik' },
-    { id: 'forge',   label: 'StrokeForge' },
-    { id: 'osobni',  label: 'Osobní' },
-  ],
-
   dragSrc: null,
   _modalTaskId: null,
   _modalSubtasks: [],
@@ -85,28 +77,32 @@ var TasksBoard = {
     });
   },
 
-  // Projekt je teď volný text (uživatel si ho píše sám), ale pro
-  // pár známých názvů si necháváme barevný tag jako dřív. Pro
-  // cokoliv jiného se zobrazí neutrální šedý tag s napsaným textem.
-  projectTagHtml(value) {
-    if (!value) return '';
-    const known = this.projects.find(p => p.id === value || p.label.toLowerCase() === value.toLowerCase());
-    if (known) return '<span class="tag ' + known.id + '">' + known.label + '</span>';
-    return '<span class="tag osobni">' + this.esc(value) + '</span>';
+  // Barva podle priority — používá se jak pro pruh vlevo na kartě,
+  // tak pro tag s projektem (projekt je volný text, žádnou vlastní
+  // barvu nemá, tak se barevně řídí prioritou úkolu).
+  priorityColor(priority) {
+    if (priority === 'high')   return { color: 'var(--red)',    bg: 'var(--red-bg)' };
+    if (priority === 'medium') return { color: 'var(--yellow)', bg: 'var(--yellow-bg)' };
+    return { color: 'var(--text-3)', bg: 'var(--bg-hover)' };
+  },
+
+  projectTagHtml(task) {
+    if (!task.project) return '';
+    const c = this.priorityColor(task.priority || 'medium');
+    return '<span style="font-size:10px;padding:2px 6px;border-radius:4px;color:' + c.color + ';background:' + c.bg + ';">' + this.esc(task.project) + '</span>';
   },
 
   renderCard(task) {
     const subs = task.subtasks || [];
     const done = subs.filter(s => s.done).length;
-    const prio = task.priority || 'medium';
-    const prioColor = prio === 'high' ? 'var(--red)' : prio === 'medium' ? 'var(--yellow)' : 'var(--border-3)';
+    const prioColor = this.priorityColor(task.priority || 'medium').color;
 
     return '<div class="task-card" data-id="' + task.id + '" draggable="true"' +
       ' style="background:var(--bg-card);border:0.5px solid var(--border);border-left:2px solid ' + prioColor + ';' +
       'border-radius:8px;padding:12px;cursor:pointer;">' +
       '<div style="font-size:13px;color:var(--text-2);line-height:1.4;margin-bottom:8px;">' + this.esc(task.title) + '</div>' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
-      this.projectTagHtml(task.project) +
+      this.projectTagHtml(task) +
       (subs.length > 0 ? '<span style="font-size:10px;color:var(--text-4);">' + done + '/' + subs.length + '</span>' : '') +
       '</div>' +
       (task.due ? '<div style="font-size:11px;color:var(--text-4);margin-top:6px;">' + this.esc(task.due) + '</div>' : '') +
@@ -153,9 +149,10 @@ var TasksBoard = {
     this._modalTaskId = task.id;
     this._modalSubtasks = (task.subtasks || []).map(function(s) { return { title: s.title, done: !!s.done }; });
 
+    // Jen projekty, které už uživatel sám někam zadal — žádné
+    // přednastavené návrhy navíc.
     const existingProjects = Array.from(new Set(
       (Store.get('tasks') || []).map(function(t) { return t.project; }).filter(Boolean)
-        .concat(this.projects.map(function(p) { return p.label; }))
     ));
     const projDatalist = existingProjects.map(function(p) {
       return '<option value="' + p + '"></option>';

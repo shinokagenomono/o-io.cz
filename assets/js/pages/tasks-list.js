@@ -110,7 +110,7 @@ var TasksList = {
       '<input type="checkbox"' + (isDone ? ' checked' : '') + ' onchange="TasksList.toggleDone(\'' + task.id + '\',this.checked)" style="cursor:pointer;" />' +
       '<span onclick="TasksBoard.openEditTask(\'' + task.id + '\')" style="flex:1;font-size:13px;cursor:pointer;color:' + (isDone ? 'var(--text-4);text-decoration:line-through;' : 'var(--text-2);') + '">' +
       this.esc(task.title) + '</span>' +
-      TasksBoard.projectTagHtml(task.project) +
+      TasksBoard.projectTagHtml(task) +
       (subs.length > 0 ? '<span style="font-size:11px;color:var(--text-4);white-space:nowrap;"><i class="ti ti-subtask" style="font-size:12px;"></i> ' + done + '/' + subs.length + '</span>' : '') +
       '</div>';
   },
