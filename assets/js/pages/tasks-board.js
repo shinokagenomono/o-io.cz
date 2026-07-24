@@ -262,7 +262,7 @@ var TasksBoard = {
 
     Store.set('tasks', tasks);
     this.closeModal();
-    this.refresh();
+    this.notifyTasksChanged();
   },
 
   deleteTask(id) {
@@ -270,7 +270,18 @@ var TasksBoard = {
     var tasks = (Store.get('tasks') || []).filter(function(t) { return t.id !== id; });
     Store.set('tasks', tasks);
     this.closeModal();
-    this.refresh();
+    this.notifyTasksChanged();
+  },
+
+  // Modal (a task-modal DOM element) sdílí s TasksBoard i stránka
+  // TasksList (Seznam) — po uložení/smazání se musí obnovit ta
+  // stránka, která je zrovna aktivní, ne vždy jen Board.
+  notifyTasksChanged() {
+    if (App.currentPage === 'tasks-list' && window.TasksList) {
+      TasksList.refresh();
+    } else {
+      this.refresh();
+    }
   },
 
   // Podúkoly se drží jen v paměti modalu (this._modalSubtasks), dokud
