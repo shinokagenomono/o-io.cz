@@ -24,12 +24,10 @@ var TasksList = {
     App.setActions('<button class="btn primary" onclick="TasksBoard.openNewTask()"><i class="ti ti-plus"></i> New task</button>');
 
     container.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <div style="position:relative;width:220px;">
-          <input id="tl-search" placeholder="Hledat úkol..." value="${this.esc(this.search)}"
-            oninput="TasksList.onSearch(this.value)"
-            style="width:100%;background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;" />
-        </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <input id="tl-search" placeholder="Hledat úkol..." value="${this.esc(this.search)}"
+          oninput="TasksList.onSearch(this.value)"
+          style="width:200px;background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;" />
         <div id="tl-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
       <div id="tl-table"></div>

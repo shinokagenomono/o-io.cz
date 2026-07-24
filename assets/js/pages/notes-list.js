@@ -22,13 +22,13 @@ var NotesList = {
     `);
 
     container.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div id="notes-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-        <input id="notes-search" placeholder="Hledat podle názvu..."
-          style="margin-left:auto;width:220px;background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;"
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <input id="notes-search" placeholder="Hledat podle názvu..." value="${this.esc(this.search)}"
+          style="width:200px;background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;"
           oninput="NotesList.onSearch(this.value)" />
+        <div id="notes-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="notes-project-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
-      <div id="notes-project-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;"></div>
       <div id="notes-grid" class="grid-5"></div>
       <div id="note-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;"></div>
     `;
