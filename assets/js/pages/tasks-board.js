@@ -84,10 +84,10 @@ var TasksBoard = {
   },
 
   renderCard(task) {
-    const proj = this.projects.find(p => p.id === task.project) || { id: 'osobni', label: 'Osobni' };
+    const proj = this.projects.find(p => p.id === task.project);
     const subs = task.subtasks || [];
     const done = subs.filter(s => s.done).length;
-    const prio = task.priority || 'low';
+    const prio = task.priority || 'medium';
     const prioColor = prio === 'high' ? 'var(--red)' : prio === 'medium' ? 'var(--yellow)' : 'var(--border-3)';
 
     return '<div class="task-card" data-id="' + task.id + '" draggable="true"' +
@@ -95,7 +95,7 @@ var TasksBoard = {
       'border-radius:8px;padding:12px;cursor:pointer;">' +
       '<div style="font-size:13px;color:var(--text-2);line-height:1.4;margin-bottom:8px;">' + this.esc(task.title) + '</div>' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
-      '<span class="tag ' + proj.id + '">' + proj.label + '</span>' +
+      (proj ? '<span class="tag ' + proj.id + '">' + proj.label + '</span>' : '') +
       (subs.length > 0 ? '<span style="font-size:10px;color:var(--text-4);">' + done + '/' + subs.length + '</span>' : '') +
       '</div>' +
       (task.due ? '<div style="font-size:11px;color:var(--text-4);margin-top:6px;">' + this.esc(task.due) + '</div>' : '') +
@@ -122,7 +122,7 @@ var TasksBoard = {
       title: '',
       status: defaultStatus,
       priority: 'medium',
-      project: 'osobni',
+      project: '',
       subtasks: [],
       due: '',
       description: '',
@@ -139,12 +139,22 @@ var TasksBoard = {
     const modal = document.getElementById('task-modal');
     modal.style.display = 'flex';
 
-    const projOptions = this.projects.map(function(p) {
-      return '<option value="' + p.id + '"' + (task.project === p.id ? ' selected' : '') + '>' + p.label + '</option>';
-    }).join('');
+    const projOptions = '<option value=""' + (!task.project ? ' selected' : '') + '>— vyber —</option>' +
+      this.projects.map(function(p) {
+        return '<option value="' + p.id + '"' + (task.project === p.id ? ' selected' : '') + '>' + p.label + '</option>';
+      }).join('');
 
     const colOptions = this.columns.map(function(c) {
       return '<option value="' + c.id + '"' + (task.status === c.id ? ' selected' : '') + '>' + c.label + '</option>';
+    }).join('');
+
+    const priorities = [
+      { id: 'high',   label: 'Vysoká' },
+      { id: 'medium', label: 'Střední' },
+      { id: 'low',    label: 'Nízká' },
+    ];
+    const prioOptions = priorities.map(function(p) {
+      return '<option value="' + p.id + '"' + ((task.priority || 'medium') === p.id ? ' selected' : '') + '>' + p.label + '</option>';
     }).join('');
 
     const subs = task.subtasks || [];
@@ -164,27 +174,29 @@ var TasksBoard = {
       '<i class="ti ti-x" style="font-size:18px;color:var(--text-4);cursor:pointer;" onclick="TasksBoard.closeModal()"></i>' +
       '</div>' +
 
-      '<div style="margin-bottom:14px;">' +
+      '<div style="margin-bottom:10px;">' +
       '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Název</div>' +
       '<input id="t-title" value="' + this.esc(task.title) + '" placeholder="Název úkolu..."' +
       ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
       '</div>' +
 
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Status</div>' +
       '<select id="t-status" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + colOptions + '</select></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Projekt</div>' +
       '<select id="t-project" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + projOptions + '</select></div>' +
+      '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Priorita</div>' +
+      '<select id="t-priority" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + prioOptions + '</select></div>' +
       '</div>' +
 
-      '<div style="margin-bottom:14px;">' +
+      '<div style="margin-bottom:10px;">' +
       '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Popis</div>' +
-      '<textarea id="t-desc" rows="3" placeholder="Volitelný popis..."' +
+      '<textarea id="t-desc" rows="8" placeholder="Volitelný popis..."' +
       ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;resize:vertical;">' +
       this.esc(task.description || '') + '</textarea>' +
       '</div>' +
 
-      '<div style="margin-bottom:14px;">' +
+      '<div style="margin-bottom:10px;">' +
       '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Podúkoly</div>' +
       '<div id="t-subtasks">' + subtasksHtml + '</div>' +
       '<div style="display:flex;gap:8px;margin-top:8px;">' +
@@ -221,10 +233,10 @@ var TasksBoard = {
         title: title,
         status:      document.getElementById('t-status').value,
         project:     document.getElementById('t-project').value,
+        priority:    document.getElementById('t-priority').value,
         description: document.getElementById('t-desc').value,
         subtasks:    [],
         due:         '',
-        priority:    'medium',
       });
     } else {
       var task = tasks.find(function(t) { return t.id === id; });
@@ -232,6 +244,7 @@ var TasksBoard = {
         task.title       = title;
         task.status      = document.getElementById('t-status').value;
         task.project     = document.getElementById('t-project').value;
+        task.priority    = document.getElementById('t-priority').value;
         task.description = document.getElementById('t-desc').value;
       }
     }
