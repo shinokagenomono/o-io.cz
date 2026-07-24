@@ -291,7 +291,8 @@ var TasksBoard = {
     return this._modalSubtasks.map(function(s, i) {
       return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);">' +
         '<input type="checkbox"' + (s.done ? ' checked' : '') + ' onchange="TasksBoard.toggleSub(' + i + ',this.checked)" style="cursor:pointer;" />' +
-        '<span style="font-size:13px;color:var(--text-2);flex:1;' + (s.done ? 'text-decoration:line-through;color:var(--text-4);' : '') + '">' + TasksBoard.esc(s.title) + '</span>' +
+        '<input type="text" value="' + TasksBoard.esc(s.title) + '" oninput="TasksBoard.editSub(' + i + ',this.value)"' +
+        ' style="font-size:13px;flex:1;background:transparent;border:none;outline:none;padding:2px 0;color:' + (s.done ? 'var(--text-4);text-decoration:line-through;' : 'var(--text-2);') + '" />' +
         '<i class="ti ti-x" style="font-size:13px;color:var(--text-5);cursor:pointer;" onclick="TasksBoard.removeSub(' + i + ')"></i>' +
         '</div>';
     }).join('');
@@ -318,6 +319,12 @@ var TasksBoard = {
       this._modalSubtasks[index].done = done;
       this.refreshSubtasksList();
     }
+  },
+
+  // Editace textu podúkolu na místě — nepřekresluje seznam (jinak
+  // by input za psaní ztrácel focus), jen si drží novou hodnotu.
+  editSub(index, title) {
+    if (this._modalSubtasks[index]) this._modalSubtasks[index].title = title;
   },
 
   removeSub(index) {

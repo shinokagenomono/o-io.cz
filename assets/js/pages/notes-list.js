@@ -4,17 +4,8 @@
 
 var NotesList = {
 
-  projects: [
-    { id: 'homelab', label: 'Homelab' },
-    { id: 'wow',     label: 'WoW' },
-    { id: 'goat',    label: 'GoatPatrik' },
-    { id: 'forge',   label: 'StrokeForge' },
-    { id: 'osobni',  label: 'Osobní' },
-  ],
-
   types: [
     { id: 'skica',    label: 'Skica',    color: 'var(--yellow)', bg: 'var(--yellow-bg)' },
-    { id: 'diagram',  label: 'Diagram',  color: 'var(--accent)', bg: 'var(--accent-bg)' },
     { id: 'poznamka', label: 'Poznámka', color: 'var(--text-3)', bg: 'var(--bg-hover)' },
   ],
 
@@ -94,8 +85,7 @@ var NotesList = {
   },
 
   renderCard(note) {
-    var type = this.types.find(function(t) { return t.id === note.type; }) || this.types[2];
-    var proj = this.projects.find(function(p) { return p.id === note.project; }) || { id: 'osobni', label: 'Osobní' };
+    var type = this.types.find(function(t) { return t.id === note.type; }) || this.types[1];
     var dateStr = this.relativeDate(note.updated || note.created || Date.now());
 
     return '<div class="card" onclick="NotesList.openEdit(\'' + note.id + '\')" ' +
@@ -108,7 +98,7 @@ var NotesList = {
       '</div>' +
       '<div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between;">' +
       '<span style="font-size:11px;color:var(--text-4);">' + dateStr + '</span>' +
-      '<span class="tag ' + proj.id + '">' + proj.label + '</span>' +
+      (note.project ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;color:var(--text-3);background:var(--bg-hover);">' + this.esc(note.project) + '</span>' : '<span></span>') +
       '</div>' +
       '</div>';
   },
@@ -129,7 +119,7 @@ var NotesList = {
       id: Store.uid(),
       title: '',
       type: 'poznamka',
-      project: 'osobni',
+      project: '',
       created: Date.now(),
       updated: Date.now(),
       content: null,
@@ -151,8 +141,13 @@ var NotesList = {
       return '<option value="' + t.id + '"' + (note.type === t.id ? ' selected' : '') + '>' + t.label + '</option>';
     }).join('');
 
-    var projOptions = this.projects.map(function(p) {
-      return '<option value="' + p.id + '"' + (note.project === p.id ? ' selected' : '') + '>' + p.label + '</option>';
+    // Jen projekty, které už uživatel sám někam zadal — žádné
+    // přednastavené návrhy navíc (stejně jako u úkolů).
+    var existingProjects = Array.from(new Set(
+      (Store.get('notes') || []).map(function(n) { return n.project; }).filter(Boolean)
+    ));
+    var projDatalist = existingProjects.map(function(p) {
+      return '<option value="' + p + '"></option>';
     }).join('');
 
     modal.innerHTML =
@@ -173,7 +168,9 @@ var NotesList = {
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Typ</div>' +
       '<select id="n-type" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + typeOptions + '</select></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Projekt</div>' +
-      '<select id="n-project" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + projOptions + '</select></div>' +
+      '<input id="n-project" list="n-project-list" value="' + this.esc(note.project || '') + '" placeholder="Napiš projekt..."' +
+      ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
+      '<datalist id="n-project-list">' + projDatalist + '</datalist></div>' +
       '</div>' +
 
       '<button class="btn" onclick="NotesList.openEditor()" style="width:100%;justify-content:center;margin-bottom:16px;">' +
