@@ -107,9 +107,9 @@ const Auth = {
           <div style="margin-bottom:16px;">
             <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">GitHub Personal Access Token</div>
             <input id="auth-token" type="password" placeholder="ghp_xxxxxxxxxxxx"
-              style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:10px 12px;font-size:13px;color:#e2e8f0;outline:none;"
+              style="width:100%;background:#161b27;border:0.5px solid #333a4a;border-radius:6px;padding:10px 12px;font-size:13px;color:#e2e8f0;outline:none;"
               onfocus="this.style.borderColor='#c9a84c'"
-              onblur="this.style.borderColor='#7f1d1d'"
+              onblur="this.style.borderColor='#333a4a'"
             />
             <div style="font-size:11px;color:#4b5563;margin-top:6px;">
               GitHub → Settings → Developer settings → Personal access tokens → Fine-grained → repo scope
@@ -126,18 +126,18 @@ const Auth = {
           <div style="margin-bottom:16px;">
             <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Nastavit PIN</div>
             <input id="auth-pin-new" type="password" inputmode="numeric" maxlength="6" placeholder="4–6 číslic"
-              style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:10px 12px;font-size:20px;color:#e2e8f0;outline:none;letter-spacing:8px;text-align:center;"
+              style="width:100%;background:#161b27;border:0.5px solid #333a4a;border-radius:6px;padding:10px 12px;font-size:20px;color:#e2e8f0;outline:none;letter-spacing:8px;text-align:center;"
               onfocus="this.style.borderColor='#c9a84c'"
-              onblur="this.style.borderColor='#7f1d1d'"
+              onblur="this.style.borderColor='#333a4a'"
               onkeydown="if(event.key==='Enter') Auth._submitPinSetup()"
             />
           </div>
           <div style="margin-bottom:16px;">
             <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Potvrdit PIN</div>
             <input id="auth-pin-confirm" type="password" inputmode="numeric" maxlength="6" placeholder="4–6 číslic"
-              style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:10px 12px;font-size:20px;color:#e2e8f0;outline:none;letter-spacing:8px;text-align:center;"
+              style="width:100%;background:#161b27;border:0.5px solid #333a4a;border-radius:6px;padding:10px 12px;font-size:20px;color:#e2e8f0;outline:none;letter-spacing:8px;text-align:center;"
               onfocus="this.style.borderColor='#c9a84c'"
-              onblur="this.style.borderColor='#7f1d1d'"
+              onblur="this.style.borderColor='#333a4a'"
               onkeydown="if(event.key==='Enter') Auth._submitPinSetup()"
             />
           </div>
@@ -166,9 +166,9 @@ const Auth = {
 
         <input id="auth-pin" type="password" inputmode="numeric" maxlength="6" placeholder="• • • •"
           autofocus
-          style="width:100%;background:#161b27;border:0.5px solid #7f1d1d;border-radius:6px;padding:14px;font-size:28px;color:#e2e8f0;outline:none;letter-spacing:12px;text-align:center;margin-bottom:12px;"
+          style="width:100%;background:#161b27;border:0.5px solid #333a4a;border-radius:6px;padding:14px;font-size:28px;color:#e2e8f0;outline:none;letter-spacing:12px;text-align:center;margin-bottom:12px;"
           onfocus="this.style.borderColor='#c9a84c'"
-          onblur="this.style.borderColor='#7f1d1d'"
+          onblur="this.style.borderColor='#333a4a'"
           onkeydown="if(event.key==='Enter') Auth._submitPin()"
         />
 
