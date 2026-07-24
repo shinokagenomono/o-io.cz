@@ -10,10 +10,13 @@ var Dashboard = {
     container.innerHTML = `
       <div style="display:flex;flex-direction:column;height:100%;">
 
-        <!-- Datum a čas -->
-        <div style="margin-bottom: 24px;flex-shrink:0;">
-          <div id="dash-clock" style="font-size: 48px; font-weight: 500; color: var(--text-1); letter-spacing: -2px; line-height: 1;">--:--</div>
-          <div id="dash-date" style="font-size: 14px; color: var(--text-4); margin-top: 6px;"></div>
+        <!-- Foto + Datum a čas -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom: 24px;flex-shrink:0;">
+          <img src="assets/img/avatar.jpg" alt="" style="height:64px;width:auto;border-radius:10px;border:1px solid var(--border);display:block;">
+          <div style="text-align:right;">
+            <div id="dash-clock" style="font-size: 48px; font-weight: 500; color: var(--text-1); letter-spacing: -2px; line-height: 1;">--:--</div>
+            <div id="dash-date" style="font-size: 14px; color: var(--text-4); margin-top: 6px;"></div>
+          </div>
         </div>
 
         <!-- Úkoly + Poznámky -->
