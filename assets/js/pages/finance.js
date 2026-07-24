@@ -7,6 +7,11 @@ var formatCzk = function(amount) {
   return amount.toLocaleString('cs-CZ') + ' Kč';
 };
 
+var formatCzkDecimal = function(amount) {
+  amount = amount || 0;
+  return amount.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Kč';
+};
+
 var financeAmountColor = function(n) {
   if (n > 0) return 'var(--green)';
   if (n < 0) return 'var(--red)';
@@ -186,15 +191,18 @@ var Finance = {
     }
 
     el.innerHTML = shopping.map(function(a) {
-      var income = (a.transactions || []).filter(function(t) { return t.amount > 0; }).reduce(function(s, t) { return s + t.amount; }, 0);
-      var paid   = (a.transactions || []).filter(function(t) { return t.amount < 0; }).reduce(function(s, t) { return s + Math.abs(t.amount); }, 0);
+      var incomes  = a.incomes  || (a.transactions || []).filter(function(t) { return t.amount > 0; });
+      var expenses = a.expenses || (a.transactions || []).filter(function(t) { return t.amount < 0; });
+      var income = incomes.reduce(function(s, t) { return s + Math.abs(t.amount || 0); }, 0);
+      var paid   = expenses.reduce(function(s, t) { return s + Math.abs(t.amount || 0); }, 0);
+      var balance = income - paid;
 
       return '<div class="status-row" style="cursor:pointer;align-items:center;" onclick="App.navigate(\'finance-shopping\',\'' + a.id + '\')">' +
         '<span class="status-name" style="min-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + financeEsc(a.name) + '</span>' +
         '<div style="display:flex;gap:28px;flex:1;">' +
-        '<div class="mini-stat"><span class="mini-stat-label">Na účtu</span><span class="mini-stat-val">' + formatCzk(a.balance) + '</span></div>' +
-        '<div class="mini-stat"><span class="mini-stat-label">Přijato</span><span class="mini-stat-val" style="color:var(--green);">' + formatCzk(income) + '</span></div>' +
-        '<div class="mini-stat"><span class="mini-stat-label">Uhrazeno</span><span class="mini-stat-val" style="color:var(--red);">' + formatCzk(paid) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Na účtu</span><span class="mini-stat-val" style="color:' + financeAmountColor(balance) + ';">' + formatCzkDecimal(balance) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Přijato</span><span class="mini-stat-val" style="color:var(--green);">' + formatCzkDecimal(income) + '</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Uhrazeno</span><span class="mini-stat-val" style="color:var(--red);">' + formatCzkDecimal(paid) + '</span></div>' +
         '</div>' +
         '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="event.stopPropagation();Finance.deleteShopping(\'' + a.id + '\')"></i>' +
         '</div>';
@@ -737,6 +745,8 @@ var FinanceShopping = {
 
   currentId: null,
   container: null,
+  editingIncomeId: null,
+  editingExpenseId: null,
 
   render(container, id) {
     this.container = container;
@@ -758,6 +768,19 @@ var FinanceShopping = {
 
     var account = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
 
+    // Migrace ze starého jednotného seznamu transakcí (kladná/záporná
+    // částka) na dva oddělené seznamy Příjmy/Výdaje s kladnými částkami.
+    if (!account.incomes && !account.expenses) {
+      var old = account.transactions || [];
+      account.incomes  = old.filter(function(t) { return t.amount > 0; })
+        .map(function(t) { return { id: t.id, date: t.date, description: t.description, amount: t.amount }; });
+      account.expenses = old.filter(function(t) { return t.amount < 0; })
+        .map(function(t) { return { id: t.id, date: t.date, description: t.description, amount: Math.abs(t.amount) }; });
+      delete account.transactions;
+      delete account.balance;
+      Store.set('finance_shopping', accounts);
+    }
+
     var options = accounts.map(function(a) {
       return '<option value="' + a.id + '"' + (a.id === account.id ? ' selected' : '') + '>' + financeEsc(a.name) + '</option>';
     }).join('');
@@ -767,39 +790,56 @@ var FinanceShopping = {
       '<button class="btn primary" onclick="FinanceShopping.addAccount()" style="margin-left:8px;"><i class="ti ti-plus"></i> Nový účet</button>'
     );
 
-    var transactions = account.transactions || [];
-    var income = transactions.filter(function(t) { return t.amount > 0; }).reduce(function(s, t) { return s + t.amount; }, 0);
-    var paid   = transactions.filter(function(t) { return t.amount < 0; }).reduce(function(s, t) { return s + Math.abs(t.amount); }, 0);
+    var incomes  = account.incomes || [];
+    var expenses = account.expenses || [];
+    var income  = incomes.reduce(function(s, t) { return s + (t.amount || 0); }, 0);
+    var paid    = expenses.reduce(function(s, t) { return s + (t.amount || 0); }, 0);
+    var balance = income - paid;
 
     container.innerHTML =
       '<div class="card" style="margin-bottom:16px;">' +
-      '<div class="section-title">Přehled účtu</div>' +
-      '<div class="grid-3" style="margin-bottom:12px;">' +
-      '<div><div style="font-size:11px;color:var(--text-4);">Na účtu</div><div id="fsh-balance-display" style="font-size:18px;color:var(--text-1);">' + formatCzk(account.balance) + '</div></div>' +
-      '<div><div style="font-size:11px;color:var(--text-4);">Přijato</div><div style="font-size:18px;color:var(--green);">' + formatCzk(income) + '</div></div>' +
-      '<div><div style="font-size:11px;color:var(--text-4);">Uhrazeno</div><div style="font-size:18px;color:var(--red);">' + formatCzk(paid) + '</div></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+      '<div class="section-title" style="margin-bottom:0;">Přehled účtu</div>' +
+      '<button class="btn" onclick="FinanceShopping.resetAccount()" style="color:var(--red);border-color:var(--red-bg);font-size:11px;padding:3px 8px;"><i class="ti ti-refresh-alert"></i> Reset</button>' +
       '</div>' +
-      '<button class="btn" onclick="FinanceShopping.editBalance()"><i class="ti ti-pencil"></i> Upravit zůstatek</button>' +
-      '<div id="fsh-balance-edit" style="display:none;margin-top:10px;gap:8px;">' +
-      '<input id="fsh-balance-input" type="number" value="' + account.balance + '" style="width:160px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
-      '<button class="btn primary" onclick="FinanceShopping.saveBalance()">Uložit</button>' +
-      '<button class="btn" onclick="document.getElementById(\'fsh-balance-edit\').style.display=\'none\'">Zrušit</button>' +
+      '<div class="grid-3">' +
+      '<div><div style="font-size:11px;color:var(--text-4);">Na účtu</div><div style="font-size:18px;color:' + financeAmountColor(balance) + ';">' + formatCzkDecimal(balance) + '</div></div>' +
+      '<div><div style="font-size:11px;color:var(--text-4);">Přijato</div><div style="font-size:18px;color:var(--green);">' + formatCzkDecimal(income) + '</div></div>' +
+      '<div><div style="font-size:11px;color:var(--text-4);">Uhrazeno</div><div style="font-size:18px;color:var(--red);">' + formatCzkDecimal(paid) + '</div></div>' +
+      '</div></div>' +
+
+      '<div class="grid-2">' +
+
+      '<div class="card">' +
+      '<div class="section-title">Příjmy</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;">' +
+      '<span style="width:80px;">Datum</span><span style="flex:1;">Popis</span><span style="width:90px;text-align:right;">Částka</span><span style="width:44px;"></span>' +
+      '</div>' +
+      '<div id="fsh-incomes"></div>' +
+      '<div style="display:flex;gap:6px;align-items:center;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);flex-wrap:wrap;">' +
+      '<input id="fsh-inc-date" type="date" style="width:130px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text-1);outline:none;" />' +
+      '<input id="fsh-inc-desc" placeholder="Popis..." style="flex:1;min-width:80px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text-1);outline:none;" />' +
+      '<input id="fsh-inc-amount" type="number" step="0.01" placeholder="Kč" style="width:90px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text-1);outline:none;" />' +
+      '<button class="btn primary" onclick="FinanceShopping.addIncome()"><i class="ti ti-plus"></i></button>' +
       '</div></div>' +
 
       '<div class="card">' +
-      '<div class="section-title">Transakce</div>' +
-      '<div style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;">' +
-      '<span style="width:90px;">Datum</span><span style="flex:1;">Popis</span><span style="width:110px;text-align:right;">Částka</span><span style="width:20px;"></span>' +
+      '<div class="section-title">Výdaje</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.5px;">' +
+      '<span style="width:80px;">Datum</span><span style="flex:1;">Popis</span><span style="width:90px;text-align:right;">Částka</span><span style="width:44px;"></span>' +
       '</div>' +
-      '<div id="fsh-transactions"></div>' +
-      '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">' +
-      '<input id="fsh-tr-date" type="date" style="width:150px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
-      '<input id="fsh-tr-desc" placeholder="Popis..." style="flex:1;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
-      '<input id="fsh-tr-amount" type="number" placeholder="Částka (- výdaj / + příjem)" style="width:200px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
-      '<button class="btn primary" onclick="FinanceShopping.addTransaction()"><i class="ti ti-plus"></i> Přidat</button>' +
-      '</div></div>';
+      '<div id="fsh-expenses"></div>' +
+      '<div style="display:flex;gap:6px;align-items:center;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);flex-wrap:wrap;">' +
+      '<input id="fsh-exp-date" type="date" style="width:130px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text-1);outline:none;" />' +
+      '<input id="fsh-exp-desc" placeholder="Popis..." style="flex:1;min-width:80px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text-1);outline:none;" />' +
+      '<input id="fsh-exp-amount" type="number" step="0.01" placeholder="Kč" style="width:90px;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text-1);outline:none;" />' +
+      '<button class="btn primary" onclick="FinanceShopping.addExpense()"><i class="ti ti-plus"></i></button>' +
+      '</div></div>' +
 
-    this.renderTransactions(transactions);
+      '</div>';
+
+    this.renderIncomes(incomes);
+    this.renderExpenses(expenses);
   },
 
   switchAccount(id) {
@@ -811,65 +851,210 @@ var FinanceShopping = {
     if (!name) return;
 
     var accounts = Store.get('finance_shopping') || [];
-    var acc = { id: Store.uid(), name: name, balance: 0, transactions: [] };
+    var acc = { id: Store.uid(), name: name, incomes: [], expenses: [] };
     accounts.push(acc);
     Store.set('finance_shopping', accounts);
     this.currentId = acc.id;
     App.navigate('finance-shopping', acc.id);
   },
 
-  editBalance() {
-    var editEl = document.getElementById('fsh-balance-edit');
-    editEl.style.display = 'flex';
-  },
-
-  saveBalance() {
-    var amount = parseFloat(document.getElementById('fsh-balance-input').value) || 0;
+  resetAccount() {
+    if (!confirm('Opravdu vynulovat celý účet? Smažou se všechny příjmy i výdaje.')) return;
     var accounts = Store.get('finance_shopping') || [];
     var acc = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
-    if (acc) acc.balance = amount;
+    if (acc) {
+      acc.incomes = [];
+      acc.expenses = [];
+    }
     Store.set('finance_shopping', accounts);
     this.render(this.container, this.currentId);
   },
 
-  renderTransactions(transactions) {
-    var el = document.getElementById('fsh-transactions');
+  getCurrentAccount() {
+    var accounts = Store.get('finance_shopping') || [];
+    return accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
+  },
+
+  // --- Příjmy ---
+
+  renderIncomes(incomes) {
+    var el = document.getElementById('fsh-incomes');
     if (!el) return;
 
-    if (!transactions.length) {
-      el.innerHTML = '<div style="font-size:12px;color:var(--text-4);padding:8px 0;">Zatím žádná transakce.</div>';
+    if (!incomes.length) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--text-4);padding:8px 0;">Zatím žádný příjem.</div>';
       return;
     }
 
-    el.innerHTML = transactions.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); }).map(function(t) {
-      return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">' +
-        '<span style="width:90px;color:var(--text-3);">' + financeFormatDate(t.date) + '</span>' +
-        '<span style="flex:1;color:var(--text-2);">' + financeEsc(t.description) + '</span>' +
-        '<span style="width:110px;text-align:right;color:' + financeAmountColor(t.amount) + ';">' + formatCzk(t.amount) + '</span>' +
-        '<span style="width:20px;"><i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinanceShopping.deleteTransaction(\'' + t.id + '\')"></i></span>' +
-        '</div>';
-    }).join('');
+    el.innerHTML = incomes.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); })
+      .map(function(t) { return FinanceShopping.renderIncomeRow(t); }).join('');
   },
 
-  addTransaction() {
-    var date   = document.getElementById('fsh-tr-date').value;
-    var desc   = document.getElementById('fsh-tr-desc').value.trim();
-    var amount = parseFloat(document.getElementById('fsh-tr-amount').value);
+  renderIncomeRow(t) {
+    if (this.editingIncomeId === t.id) {
+      return '<div style="display:flex;gap:6px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:12px;">' +
+        '<input type="date" id="fsh-edit-inc-date" value="' + (t.date || '') + '"' +
+        ' style="width:130px;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:4px 6px;color:var(--text-1);font-size:12px;outline:none;" />' +
+        '<input type="text" id="fsh-edit-inc-desc" value="' + financeEsc(t.description) + '" placeholder="Popis"' +
+        ' style="flex:1;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:4px 6px;color:var(--text-1);font-size:12px;outline:none;" />' +
+        '<input type="number" step="0.01" id="fsh-edit-inc-amount" value="' + t.amount + '"' +
+        ' style="width:90px;text-align:right;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:4px 6px;color:var(--text-1);font-size:12px;outline:none;" />' +
+        '<span style="width:44px;display:flex;gap:8px;">' +
+        '<i class="ti ti-check" style="color:var(--green);cursor:pointer;" onclick="FinanceShopping.saveIncomeEdit(\'' + t.id + '\')"></i>' +
+        '<i class="ti ti-x" style="color:var(--text-5);cursor:pointer;" onclick="FinanceShopping.cancelIncomeEdit()"></i>' +
+        '</span></div>';
+    }
+
+    return '<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:12px;">' +
+      '<span style="width:80px;color:var(--text-3);">' + financeFormatDate(t.date) + '</span>' +
+      '<span style="flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + financeEsc(t.description) + '</span>' +
+      '<span style="width:90px;text-align:right;color:var(--green);">' + formatCzkDecimal(t.amount) + '</span>' +
+      '<span style="width:44px;display:flex;gap:8px;">' +
+      '<i class="ti ti-pencil" style="color:var(--text-5);cursor:pointer;" onclick="FinanceShopping.editIncomeStart(\'' + t.id + '\')"></i>' +
+      '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinanceShopping.deleteIncome(\'' + t.id + '\')"></i>' +
+      '</span></div>';
+  },
+
+  addIncome() {
+    var date   = document.getElementById('fsh-inc-date').value;
+    var desc   = document.getElementById('fsh-inc-desc').value.trim();
+    var amount = parseFloat(document.getElementById('fsh-inc-amount').value) || 0;
     if (!desc || !amount) return;
 
     var accounts = Store.get('finance_shopping') || [];
     var acc = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
-    acc.transactions = acc.transactions || [];
-    acc.transactions.push({ id: Store.uid(), date: date || null, description: desc, amount: amount });
+    acc.incomes = acc.incomes || [];
+    acc.incomes.push({ id: Store.uid(), date: date || null, description: desc, amount: amount });
     Store.set('finance_shopping', accounts);
     this.render(this.container, this.currentId);
   },
 
-  deleteTransaction(id) {
-    if (!confirm('Smazat transakci?')) return;
+  editIncomeStart(id) {
+    this.editingIncomeId = id;
+    this.renderIncomes(this.getCurrentAccount().incomes || []);
+  },
+
+  cancelIncomeEdit() {
+    this.editingIncomeId = null;
+    this.renderIncomes(this.getCurrentAccount().incomes || []);
+  },
+
+  saveIncomeEdit(id) {
+    var date   = document.getElementById('fsh-edit-inc-date').value;
+    var desc   = document.getElementById('fsh-edit-inc-desc').value.trim();
+    var amount = parseFloat(document.getElementById('fsh-edit-inc-amount').value) || 0;
+    if (!desc) return;
+
     var accounts = Store.get('finance_shopping') || [];
     var acc = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
-    acc.transactions = (acc.transactions || []).filter(function(t) { return t.id !== id; });
+    var t = (acc.incomes || []).find(function(x) { return x.id === id; });
+    if (t) {
+      t.date = date || null;
+      t.description = desc;
+      t.amount = amount;
+    }
+    Store.set('finance_shopping', accounts);
+    this.editingIncomeId = null;
+    this.render(this.container, this.currentId);
+  },
+
+  deleteIncome(id) {
+    if (!confirm('Smazat příjem?')) return;
+    var accounts = Store.get('finance_shopping') || [];
+    var acc = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
+    acc.incomes = (acc.incomes || []).filter(function(t) { return t.id !== id; });
+    Store.set('finance_shopping', accounts);
+    this.render(this.container, this.currentId);
+  },
+
+  // --- Výdaje ---
+
+  renderExpenses(expenses) {
+    var el = document.getElementById('fsh-expenses');
+    if (!el) return;
+
+    if (!expenses.length) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--text-4);padding:8px 0;">Zatím žádný výdaj.</div>';
+      return;
+    }
+
+    el.innerHTML = expenses.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); })
+      .map(function(t) { return FinanceShopping.renderExpenseRow(t); }).join('');
+  },
+
+  renderExpenseRow(t) {
+    if (this.editingExpenseId === t.id) {
+      return '<div style="display:flex;gap:6px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:12px;">' +
+        '<input type="date" id="fsh-edit-exp-date" value="' + (t.date || '') + '"' +
+        ' style="width:130px;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:4px 6px;color:var(--text-1);font-size:12px;outline:none;" />' +
+        '<input type="text" id="fsh-edit-exp-desc" value="' + financeEsc(t.description) + '" placeholder="Popis"' +
+        ' style="flex:1;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:4px 6px;color:var(--text-1);font-size:12px;outline:none;" />' +
+        '<input type="number" step="0.01" id="fsh-edit-exp-amount" value="' + t.amount + '"' +
+        ' style="width:90px;text-align:right;background:var(--bg);border:0.5px solid var(--accent);border-radius:6px;padding:4px 6px;color:var(--text-1);font-size:12px;outline:none;" />' +
+        '<span style="width:44px;display:flex;gap:8px;">' +
+        '<i class="ti ti-check" style="color:var(--green);cursor:pointer;" onclick="FinanceShopping.saveExpenseEdit(\'' + t.id + '\')"></i>' +
+        '<i class="ti ti-x" style="color:var(--text-5);cursor:pointer;" onclick="FinanceShopping.cancelExpenseEdit()"></i>' +
+        '</span></div>';
+    }
+
+    return '<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:12px;">' +
+      '<span style="width:80px;color:var(--text-3);">' + financeFormatDate(t.date) + '</span>' +
+      '<span style="flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + financeEsc(t.description) + '</span>' +
+      '<span style="width:90px;text-align:right;color:var(--red);">' + formatCzkDecimal(t.amount) + '</span>' +
+      '<span style="width:44px;display:flex;gap:8px;">' +
+      '<i class="ti ti-pencil" style="color:var(--text-5);cursor:pointer;" onclick="FinanceShopping.editExpenseStart(\'' + t.id + '\')"></i>' +
+      '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="FinanceShopping.deleteExpense(\'' + t.id + '\')"></i>' +
+      '</span></div>';
+  },
+
+  addExpense() {
+    var date   = document.getElementById('fsh-exp-date').value;
+    var desc   = document.getElementById('fsh-exp-desc').value.trim();
+    var amount = parseFloat(document.getElementById('fsh-exp-amount').value) || 0;
+    if (!desc || !amount) return;
+
+    var accounts = Store.get('finance_shopping') || [];
+    var acc = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
+    acc.expenses = acc.expenses || [];
+    acc.expenses.push({ id: Store.uid(), date: date || null, description: desc, amount: amount });
+    Store.set('finance_shopping', accounts);
+    this.render(this.container, this.currentId);
+  },
+
+  editExpenseStart(id) {
+    this.editingExpenseId = id;
+    this.renderExpenses(this.getCurrentAccount().expenses || []);
+  },
+
+  cancelExpenseEdit() {
+    this.editingExpenseId = null;
+    this.renderExpenses(this.getCurrentAccount().expenses || []);
+  },
+
+  saveExpenseEdit(id) {
+    var date   = document.getElementById('fsh-edit-exp-date').value;
+    var desc   = document.getElementById('fsh-edit-exp-desc').value.trim();
+    var amount = parseFloat(document.getElementById('fsh-edit-exp-amount').value) || 0;
+    if (!desc) return;
+
+    var accounts = Store.get('finance_shopping') || [];
+    var acc = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
+    var t = (acc.expenses || []).find(function(x) { return x.id === id; });
+    if (t) {
+      t.date = date || null;
+      t.description = desc;
+      t.amount = amount;
+    }
+    Store.set('finance_shopping', accounts);
+    this.editingExpenseId = null;
+    this.render(this.container, this.currentId);
+  },
+
+  deleteExpense(id) {
+    if (!confirm('Smazat výdaj?')) return;
+    var accounts = Store.get('finance_shopping') || [];
+    var acc = accounts.find(function(a) { return a.id === FinanceShopping.currentId; });
+    acc.expenses = (acc.expenses || []).filter(function(t) { return t.id !== id; });
     Store.set('finance_shopping', accounts);
     this.render(this.container, this.currentId);
   },
