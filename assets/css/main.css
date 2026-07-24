@@ -271,6 +271,12 @@ html, body {
   gap: 12px;
 }
 
+.grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
 /* Status row */
 .status-row {
   display: flex;

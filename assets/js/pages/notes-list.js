@@ -10,6 +10,7 @@ var NotesList = {
   ],
 
   filter: 'all',
+  projectFilter: 'all',
   search: '',
   _editingId: null,
 
@@ -21,17 +22,19 @@ var NotesList = {
     `);
 
     container.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <div id="notes-filters" style="display:flex;gap:6px;"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div id="notes-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         <input id="notes-search" placeholder="Hledat podle názvu..."
           style="margin-left:auto;width:220px;background:var(--bg-card);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;"
           oninput="NotesList.onSearch(this.value)" />
       </div>
-      <div id="notes-grid" class="grid-3"></div>
+      <div id="notes-project-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;"></div>
+      <div id="notes-grid" class="grid-5"></div>
       <div id="note-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;"></div>
     `;
 
     this.renderFilters();
+    this.renderProjectFilters();
     this.refresh();
   },
 
@@ -53,6 +56,32 @@ var NotesList = {
     this.refresh();
   },
 
+  // Filtr podle projektu — dynamicky sestavený z reálně použitých
+  // hodnot (projekt je volný text, žádný pevný seznam).
+  renderProjectFilters() {
+    var el = document.getElementById('notes-project-filters');
+    if (!el) return;
+
+    var notes = Store.get('notes') || [];
+    var projects = Array.from(new Set(notes.map(function(n) { return n.project; }).filter(Boolean)));
+
+    if (!projects.length) { el.innerHTML = ''; return; }
+
+    var opts = ['all'].concat(projects);
+
+    el.innerHTML = opts.map(function(p) {
+      var active = NotesList.projectFilter === p;
+      var label  = p === 'all' ? 'Vše projekty' : p;
+      return '<button class="btn' + (active ? ' primary' : '') + '" onclick="NotesList.setProjectFilter(\'' + NotesList.esc(p).replace(/'/g, "\\'") + '\')">' + NotesList.esc(label) + '</button>';
+    }).join('');
+  },
+
+  setProjectFilter(p) {
+    this.projectFilter = p;
+    this.renderProjectFilters();
+    this.refresh();
+  },
+
   onSearch(v) {
     this.search = (v || '').toLowerCase();
     this.refresh();
@@ -66,6 +95,9 @@ var NotesList = {
 
     if (this.filter !== 'all') {
       notes = notes.filter(function(n) { return n.type === NotesList.filter; });
+    }
+    if (this.projectFilter !== 'all') {
+      notes = notes.filter(function(n) { return n.project === NotesList.projectFilter; });
     }
     if (this.search) {
       notes = notes.filter(function(n) { return (n.title || '').toLowerCase().indexOf(NotesList.search) !== -1; });
@@ -220,6 +252,7 @@ var NotesList = {
 
     Store.set('notes', notes);
     this.closeModal();
+    this.renderProjectFilters();
     this.refresh();
   },
 
@@ -229,6 +262,7 @@ var NotesList = {
     Store.set('notes', notes);
     Store.remove('note_' + id);
     this.closeModal();
+    this.renderProjectFilters();
     this.refresh();
   },
 
