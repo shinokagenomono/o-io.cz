@@ -8,55 +8,45 @@ var Dashboard = {
 
   render(container) {
     container.innerHTML = `
+      <div style="display:flex;flex-direction:column;height:100%;">
 
-      <!-- Datum a čas -->
-      <div style="margin-bottom: 24px;">
-        <div id="dash-clock" style="font-size: 48px; font-weight: 500; color: var(--text-1); letter-spacing: -2px; line-height: 1;">--:--</div>
-        <div id="dash-date" style="font-size: 14px; color: var(--text-4); margin-top: 6px;"></div>
-      </div>
+        <!-- Datum a čas -->
+        <div style="margin-bottom: 24px;flex-shrink:0;">
+          <div id="dash-clock" style="font-size: 48px; font-weight: 500; color: var(--text-1); letter-spacing: -2px; line-height: 1;">--:--</div>
+          <div id="dash-date" style="font-size: 14px; color: var(--text-4); margin-top: 6px;"></div>
+        </div>
 
-      <!-- Úkoly + Poznámky -->
-      <div class="grid-2" style="margin-bottom: 12px;">
+        <!-- Úkoly + Poznámky -->
+        <div class="grid-2" style="flex:1;min-height:0;">
 
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div class="section-title" style="margin-bottom:0;">Aktivní úkoly</div>
-            <button class="btn" onclick="App.navigate('tasks-board')" style="font-size:11px;padding:3px 8px;">
-              <i class="ti ti-layout-kanban"></i> Board
-            </button>
+          <div class="card" style="display:flex;flex-direction:column;min-height:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0;">
+              <div class="section-title" style="margin-bottom:0;">Aktivní úkoly</div>
+              <button class="btn" onclick="App.navigate('tasks-board')" style="font-size:11px;padding:3px 8px;">
+                <i class="ti ti-layout-kanban"></i> Board
+              </button>
+            </div>
+            <div id="dash-tasks" style="flex:1;overflow-y:auto;"></div>
           </div>
-          <div id="dash-tasks"></div>
-        </div>
 
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div class="section-title" style="margin-bottom:0;">Poslední poznámky</div>
-            <button class="btn" onclick="App.navigate('notes-list')" style="font-size:11px;padding:3px 8px;">
-              <i class="ti ti-notes"></i> Vše
-            </button>
+          <div class="card" style="display:flex;flex-direction:column;min-height:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0;">
+              <div class="section-title" style="margin-bottom:0;">Poslední poznámky</div>
+              <button class="btn" onclick="App.navigate('notes-list')" style="font-size:11px;padding:3px 8px;">
+                <i class="ti ti-notes"></i> Vše
+              </button>
+            </div>
+            <div id="dash-notes" style="flex:1;overflow-y:auto;"></div>
           </div>
-          <div id="dash-notes"></div>
+
         </div>
 
       </div>
-
-      <!-- Homelab status -->
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div class="section-title" style="margin-bottom:0;">Homelab status</div>
-          <span class="badge green" id="dash-homelab-badge">
-            <span class="dot green"></span> Kontroluji...
-          </span>
-        </div>
-        <div id="dash-homelab"></div>
-      </div>
-
     `;
 
     this.startClock();
     this.renderTasks();
     this.renderNotes();
-    this.renderHomelab();
   },
 
   startClock() {
@@ -163,51 +153,6 @@ var Dashboard = {
 
     if (recent.length < 4) grid.appendChild(newBtn);
     el.appendChild(grid);
-  },
-
-  renderHomelab() {
-    const el    = document.getElementById('dash-homelab');
-    const badge = document.getElementById('dash-homelab-badge');
-    if (!el) return;
-
-    const services = [
-      { name: 'Proxmox N150',         url: 'http://192.168.10.2:8006',   label: '192.168.10.2:8006' },
-      { name: 'Proxmox Winterlegacy', url: 'http://192.168.10.20:8006',  label: '192.168.10.20:8006' },
-      { name: 'Home Assistant',       url: 'https://home.o-io.cz',       label: 'home.o-io.cz' },
-      { name: 'Nextcloud',            url: 'https://cloud.o-io.cz',      label: 'cloud.o-io.cz' },
-      { name: 'BookStack',            url: 'https://work.o-io.cz',       label: 'work.o-io.cz' },
-      { name: 'Jellyfin',             url: 'http://192.168.10.52:8096',  label: '192.168.10.52:8096' },
-      { name: 'WoW server',           url: 'http://192.168.10.21',       label: '192.168.10.21' },
-      { name: 'OPNsense',             url: 'http://192.168.10.1',        label: '192.168.10.1' },
-      { name: 'Netdata N150',         url: 'http://192.168.10.2:19999',  label: ':19999' },
-      { name: 'ESP32 displej',        url: 'http://192.168.10.60',       label: '192.168.10.60' },
-    ];
-
-    // Rozdel do dvou sloupců
-    const half = Math.ceil(services.length / 2);
-    const col1 = services.slice(0, half);
-    const col2 = services.slice(half);
-
-    const renderCol = (list) => list.map(s => `
-      <div class="status-row">
-        <span class="status-name">
-          <span class="dot green"></span>
-          ${this.esc(s.name)}
-        </span>
-        <a class="status-link" href="${s.url}" target="_blank" rel="noopener">${s.label}</a>
-      </div>
-    `).join('');
-
-    el.innerHTML = `
-      <div class="grid-2">
-        <div>${renderCol(col1)}</div>
-        <div>${renderCol(col2)}</div>
-      </div>
-    `;
-
-    if (badge) {
-      badge.innerHTML = `<span class="dot green"></span> online`;
-    }
   },
 
   // Escape HTML
