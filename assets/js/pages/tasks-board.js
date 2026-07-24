@@ -20,6 +20,8 @@ var TasksBoard = {
   ],
 
   dragSrc: null,
+  _modalTaskId: null,
+  _modalSubtasks: [],
 
   render(container) {
     App.setActions(`
@@ -44,7 +46,7 @@ var TasksBoard = {
   renderColumn(col) {
     return `
       <div class="board-col" data-col="${col.id}"
-        style="width:220px;min-width:220px;display:flex;flex-direction:column;gap:8px;"
+        style="flex:1 1 0;min-width:220px;display:flex;flex-direction:column;gap:8px;"
         ondragover="event.preventDefault()"
         ondrop="TasksBoard.onDrop(event,'${col.id}')">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;">
@@ -148,6 +150,9 @@ var TasksBoard = {
     const modal = document.getElementById('task-modal');
     modal.style.display = 'flex';
 
+    this._modalTaskId = task.id;
+    this._modalSubtasks = (task.subtasks || []).map(function(s) { return { title: s.title, done: !!s.done }; });
+
     const existingProjects = Array.from(new Set(
       (Store.get('tasks') || []).map(function(t) { return t.project; }).filter(Boolean)
         .concat(this.projects.map(function(p) { return p.label; }))
@@ -167,15 +172,6 @@ var TasksBoard = {
     ];
     const prioOptions = priorities.map(function(p) {
       return '<option value="' + p.id + '"' + ((task.priority || 'medium') === p.id ? ' selected' : '') + '>' + p.label + '</option>';
-    }).join('');
-
-    const subs = task.subtasks || [];
-    const subtasksHtml = subs.map(function(s, i) {
-      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);">' +
-        '<input type="checkbox"' + (s.done ? ' checked' : '') + ' onchange="TasksBoard.toggleSub(\'' + task.id + '\',' + i + ',this.checked)" style="cursor:pointer;" />' +
-        '<span style="font-size:13px;color:var(--text-2);flex:1;' + (s.done ? 'text-decoration:line-through;color:var(--text-4);' : '') + '">' + s.title + '</span>' +
-        '<i class="ti ti-x" style="font-size:13px;color:var(--text-5);cursor:pointer;" onclick="TasksBoard.removeSub(\'' + task.id + '\',' + i + ')"></i>' +
-        '</div>';
     }).join('');
 
     modal.innerHTML =
@@ -212,12 +208,12 @@ var TasksBoard = {
 
       '<div style="margin-bottom:10px;">' +
       '<div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Podúkoly</div>' +
-      '<div id="t-subtasks">' + subtasksHtml + '</div>' +
+      '<div id="t-subtasks">' + this.renderSubtasksHtml() + '</div>' +
       '<div style="display:flex;gap:8px;margin-top:8px;">' +
       '<input id="t-sub-new" placeholder="Přidat podúkol..."' +
       ' style="flex:1;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text-1);outline:none;"' +
-      ' onkeydown="if(event.key===\'Enter\') TasksBoard.addSub(\'' + task.id + '\')" />' +
-      '<button class="btn" onclick="TasksBoard.addSub(\'' + task.id + '\')"><i class="ti ti-plus"></i></button>' +
+      ' onkeydown="if(event.key===\'Enter\'){event.preventDefault();TasksBoard.addSub();}" />' +
+      '<button class="btn" onclick="TasksBoard.addSub()"><i class="ti ti-plus"></i></button>' +
       '</div></div>' +
 
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:0.5px solid var(--border);">' +
@@ -249,7 +245,7 @@ var TasksBoard = {
         project:     document.getElementById('t-project').value,
         priority:    document.getElementById('t-priority').value,
         description: document.getElementById('t-desc').value,
-        subtasks:    [],
+        subtasks:    this._modalSubtasks,
         due:         '',
       });
     } else {
@@ -260,6 +256,7 @@ var TasksBoard = {
         task.project     = document.getElementById('t-project').value;
         task.priority    = document.getElementById('t-priority').value;
         task.description = document.getElementById('t-desc').value;
+        task.subtasks    = this._modalSubtasks;
       }
     }
 
@@ -276,39 +273,48 @@ var TasksBoard = {
     this.refresh();
   },
 
-  addSub(taskId) {
+  // Podúkoly se drží jen v paměti modalu (this._modalSubtasks), dokud
+  // se úkol neuloží tlačítkem Uložit — stejně jako název/popis/status.
+  // Dřív se zapisovaly rovnou do Store podle ID úkolu, což u NOVÉHO
+  // (ještě neuloženého) úkolu tiše selhalo, protože v Store žádný
+  // záznam s tím ID ještě neexistoval.
+
+  renderSubtasksHtml() {
+    return this._modalSubtasks.map(function(s, i) {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);">' +
+        '<input type="checkbox"' + (s.done ? ' checked' : '') + ' onchange="TasksBoard.toggleSub(' + i + ',this.checked)" style="cursor:pointer;" />' +
+        '<span style="font-size:13px;color:var(--text-2);flex:1;' + (s.done ? 'text-decoration:line-through;color:var(--text-4);' : '') + '">' + TasksBoard.esc(s.title) + '</span>' +
+        '<i class="ti ti-x" style="font-size:13px;color:var(--text-5);cursor:pointer;" onclick="TasksBoard.removeSub(' + i + ')"></i>' +
+        '</div>';
+    }).join('');
+  },
+
+  refreshSubtasksList() {
+    var el = document.getElementById('t-subtasks');
+    if (el) el.innerHTML = this.renderSubtasksHtml();
+  },
+
+  addSub() {
     var input = document.getElementById('t-sub-new');
     var title = input.value.trim();
     if (!title) return;
 
-    var tasks = Store.get('tasks') || [];
-    var task  = tasks.find(function(t) { return t.id === taskId; });
-    if (task) {
-      task.subtasks = task.subtasks || [];
-      task.subtasks.push({ title: title, done: false });
-      Store.set('tasks', tasks);
-      this.openEditTask(taskId);
+    this._modalSubtasks.push({ title: title, done: false });
+    input.value = '';
+    this.refreshSubtasksList();
+    input.focus();
+  },
+
+  toggleSub(index, done) {
+    if (this._modalSubtasks[index]) {
+      this._modalSubtasks[index].done = done;
+      this.refreshSubtasksList();
     }
   },
 
-  toggleSub(taskId, index, done) {
-    var tasks = Store.get('tasks') || [];
-    var task  = tasks.find(function(t) { return t.id === taskId; });
-    if (task && task.subtasks[index]) {
-      task.subtasks[index].done = done;
-      Store.set('tasks', tasks);
-      this.refresh();
-    }
-  },
-
-  removeSub(taskId, index) {
-    var tasks = Store.get('tasks') || [];
-    var task  = tasks.find(function(t) { return t.id === taskId; });
-    if (task) {
-      task.subtasks.splice(index, 1);
-      Store.set('tasks', tasks);
-      this.openEditTask(taskId);
-    }
+  removeSub(index) {
+    this._modalSubtasks.splice(index, 1);
+    this.refreshSubtasksList();
   },
 
   closeModal() {
