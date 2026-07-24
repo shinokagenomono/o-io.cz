@@ -165,13 +165,15 @@ var Finance = {
     }
 
     el.innerHTML = savings.map(function(g) {
-      var pct = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
+      var pct      = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
+      var dosetrit = Math.max(0, (g.target || 0) - (g.saved || 0));
       return '<div class="status-row" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:8px;" onclick="App.navigate(\'finance-savings\')">' +
         '<div style="display:flex;align-items:center;">' +
         '<span class="status-name" style="min-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + financeEsc(g.name) + '</span>' +
         '<div style="display:flex;gap:28px;flex:1;">' +
         '<div class="mini-stat"><span class="mini-stat-label">Cílová částka</span><span class="mini-stat-val">' + formatCzk(g.target) + '</span></div>' +
         '<div class="mini-stat"><span class="mini-stat-label">Našetřeno</span><span class="mini-stat-val" style="color:var(--green);">' + formatCzk(g.saved) + ' (' + pct + ' %)</span></div>' +
+        '<div class="mini-stat"><span class="mini-stat-label">Došetřit</span><span class="mini-stat-val" style="color:' + (dosetrit > 0 ? 'var(--yellow)' : 'var(--green)') + ';">' + formatCzk(dosetrit) + '</span></div>' +
         '</div>' +
         '<i class="ti ti-trash" style="color:var(--text-5);cursor:pointer;" onclick="event.stopPropagation();Finance.deleteSavings(\'' + g.id + '\')"></i>' +
         '</div>' +
@@ -291,19 +293,21 @@ var FinancePlan = {
 
     var categories = plan.categories || [];
     var incomes    = plan.incomes || [];
-    var planned = categories.reduce(function(s, c) { return s + (c.planned || 0); }, 0);
-    var paid    = categories.reduce(function(s, c) { return s + (c.paid || 0); }, 0);
-    var income  = incomes.reduce(function(s, i) { return s + (i.amount || 0); }, 0);
-    var zbyva   = income - paid;
+    var planned  = categories.reduce(function(s, c) { return s + (c.planned || 0); }, 0);
+    var paid     = categories.reduce(function(s, c) { return s + (c.paid || 0); }, 0);
+    var income   = incomes.reduce(function(s, i) { return s + (i.amount || 0); }, 0);
+    var zbyva    = income - paid;
+    var dosetrit = planned - income;
 
     container.innerHTML =
       '<div class="card" style="margin-bottom:16px;">' +
       '<div class="section-title">Přehled roku</div>' +
-      '<div class="grid-4">' +
+      '<div class="grid-5">' +
       '<div><div style="font-size:11px;color:var(--text-4);">Plánované náklady</div><div style="font-size:18px;color:var(--text-1);">' + formatCzk(planned) + '</div></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);">Přijato</div><div style="font-size:18px;color:var(--text-1);">' + formatCzk(income) + '</div></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);">Zaplaceno</div><div style="font-size:18px;color:var(--text-1);">' + formatCzk(paid) + '</div></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);">Zbývá</div><div style="font-size:18px;color:' + financeAmountColor(zbyva) + ';">' + formatCzk(zbyva) + '</div></div>' +
+      '<div><div style="font-size:11px;color:var(--text-4);">Došetřit</div><div style="font-size:18px;color:' + (dosetrit > 0 ? 'var(--yellow)' : 'var(--green)') + ';">' + formatCzk(dosetrit) + '</div></div>' +
       '</div></div>' +
 
       '<div class="card" style="margin-bottom:16px;">' +
@@ -484,11 +488,13 @@ var FinanceSavings = {
 
     var grid = document.getElementById('fs-grid');
     grid.innerHTML = savings.map(function(g) {
-      var pct = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
+      var pct      = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
+      var dosetrit = Math.max(0, (g.target || 0) - (g.saved || 0));
       return '<div class="card">' +
         '<div style="font-size:14px;color:var(--text-1);margin-bottom:10px;">' + financeEsc(g.name) + '</div>' +
         financeBar(pct, 'green') +
-        '<div style="font-size:12px;color:var(--text-3);margin-top:8px;margin-bottom:14px;">Našetřeno: ' + formatCzk(g.saved) + ' z ' + formatCzk(g.target) + ' (' + pct + ' %)</div>' +
+        '<div style="font-size:12px;color:var(--text-3);margin-top:8px;">Našetřeno: ' + formatCzk(g.saved) + ' z ' + formatCzk(g.target) + ' (' + pct + ' %)</div>' +
+        '<div style="font-size:12px;color:' + (dosetrit > 0 ? 'var(--yellow)' : 'var(--green)') + ';margin-bottom:14px;">Došetřit: ' + formatCzk(dosetrit) + '</div>' +
         '<div style="display:flex;gap:8px;">' +
         '<button class="btn" onclick="FinanceSavings.openDeposit(\'' + g.id + '\')"><i class="ti ti-plus"></i> Vklad</button>' +
         '<button class="btn" onclick="FinanceSavings.openEdit(\'' + g.id + '\')"><i class="ti ti-pencil"></i> Upravit</button>' +

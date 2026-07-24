@@ -71,7 +71,7 @@ var NotesList = {
 
     el.innerHTML = opts.map(function(p) {
       var active = NotesList.projectFilter === p;
-      var label  = p === 'all' ? 'Vše projekty' : p;
+      var label  = p === 'all' ? 'Všechny projekty' : p;
       return '<button class="btn' + (active ? ' primary' : '') + '" onclick="NotesList.setProjectFilter(\'' + NotesList.esc(p).replace(/'/g, "\\'") + '\')">' + NotesList.esc(label) + '</button>';
     }).join('');
   },
@@ -200,7 +200,7 @@ var NotesList = {
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Typ</div>' +
       '<select id="n-type" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + typeOptions + '</select></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Projekt</div>' +
-      '<input id="n-project" list="n-project-list" value="' + this.esc(note.project || '') + '" placeholder="Napiš projekt..."' +
+      '<input id="n-project" list="n-project-list" autocomplete="off" value="' + this.esc(note.project || '') + '" placeholder="Napiš projekt..."' +
       ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
       '<datalist id="n-project-list">' + projDatalist + '</datalist></div>' +
       '</div>' +

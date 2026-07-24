@@ -189,7 +189,7 @@ var TasksBoard = {
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Status</div>' +
       '<select id="t-status" style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;">' + colOptions + '</select></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Projekt</div>' +
-      '<input id="t-project" list="t-project-list" value="' + this.esc(task.project || '') + '" placeholder="Napiš projekt..."' +
+      '<input id="t-project" list="t-project-list" autocomplete="off" value="' + this.esc(task.project || '') + '" placeholder="Napiš projekt..."' +
       ' style="width:100%;background:var(--bg);border:0.5px solid var(--border-2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-1);outline:none;" />' +
       '<datalist id="t-project-list">' + projDatalist + '</datalist></div>' +
       '<div><div style="font-size:11px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Priorita</div>' +
